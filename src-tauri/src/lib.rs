@@ -4,8 +4,9 @@
 
 pub mod commands;
 pub mod config;
-pub mod core; // domain logic (W5 cores, …) — Tauri-free, unit-testable
+pub mod core; // domain logic (cores/library/launch/metadata/search/vibrancy/familiar) — Tauri-free
 pub mod db; // W3 — SQLite persistence (handle, migrations, repos)
+pub mod fleet; // W11 — Fleet/Ensign: identity, manifest, status server
 pub mod error;
 pub mod telemetry;
 

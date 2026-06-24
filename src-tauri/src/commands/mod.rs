@@ -8,14 +8,14 @@
 
 pub mod health; // W1 — liveness stub (ping)
 // --- APPEND DOMAIN MODULE DECLARATIONS BELOW THIS LINE ---
-// pub mod library;     // W6/W13
 pub mod cores; // W5/W16
-// pub mod launch;      // W7
-// pub mod metadata;    // W8
-// pub mod search;      // W9/W17
-// pub mod vibrancy;    // W10
-// pub mod fleet;       // W11
-// pub mod familiar;    // W12
+pub mod library; // W6/W13
+pub mod launch; // W7
+pub mod metadata; // W8
+pub mod search; // W9/W17
+pub mod vibrancy; // W10
+pub mod fleet; // W11
+pub mod familiar; // W12
 // pub mod settings;    // W4/W15
 // pub mod controllers; // W14
 
@@ -36,8 +36,34 @@ macro_rules! register_commands {
             $crate::commands::cores::install_core,
             $crate::commands::cores::update_core,
             $crate::commands::cores::set_active_core,
-            // $crate::commands::library::scan_folder,
-            // $crate::commands::library::list_games,
+            // library (W6/W13)
+            $crate::commands::library::add_content_folder,
+            $crate::commands::library::list_content_folders,
+            $crate::commands::library::remove_content_folder,
+            $crate::commands::library::scan_folder,
+            $crate::commands::library::rescan,
+            $crate::commands::library::list_games,
+            $crate::commands::library::get_game,
+            // launch (W7)
+            $crate::commands::launch::launch_game,
+            $crate::commands::launch::locate_retroarch,
+            $crate::commands::launch::set_retroarch_path,
+            // metadata (W8)
+            $crate::commands::metadata::fetch_boxart,
+            $crate::commands::metadata::get_cached_art,
+            // search (W9)
+            $crate::commands::search::list_providers,
+            $crate::commands::search::add_provider,
+            $crate::commands::search::update_provider,
+            $crate::commands::search::remove_provider,
+            $crate::commands::search::run_search,
+            // vibrancy (W10)
+            $crate::commands::vibrancy::get_blurred_hero,
+            // fleet (W11)
+            $crate::commands::fleet::get_fleet_status,
+            // familiar (W12)
+            $crate::commands::familiar::probe_familiar,
+            $crate::commands::familiar::enrich_game,
         ])
     };
 }
