@@ -8,6 +8,7 @@
 
 import type { ReactElement } from "react";
 import { GameDetailPage, LibraryPage } from "./features/library"; // W13
+import { SettingsPage } from "./features/settings/SettingsPage"; // W15
 
 /** One screen in the app: a route path, its element, and a nav label. */
 export interface HarmonyRoute {
@@ -54,7 +55,7 @@ export const HARMONY_ROUTES: readonly HarmonyRoute[] = [
   {
     path: "/settings",
     navLabel: "Settings",
-    element: <Placeholder title="Settings" owner="W15" />,
+    element: <SettingsPage />, // W15
   },
   {
     path: "/game/:id",
