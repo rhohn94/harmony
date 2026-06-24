@@ -12,7 +12,7 @@
 
 use crate::config::{paths::Paths, AppConfig};
 use crate::core::familiar::client::FamiliarClient;
-use crate::core::familiar::keychain::KeychainStore;
+use crate::core::familiar::keychain::{KeyStore, KeychainStore};
 use crate::core::familiar::probe::FamiliarProbe;
 use crate::core::familiar::transport::ReqwestTransport;
 use crate::db::repo::library::{Game, LibraryRepo};
@@ -32,6 +32,41 @@ fn build_client() -> AppResult<FamiliarClient> {
         Box::new(KeychainStore::new()),
         config.familiar_base_url,
     ))
+}
+
+/// Persist the Familiar connection settings from the Settings screen (W15):
+/// the base URL goes to the file-backed [`AppConfig`] (W4); the Bearer key goes
+/// to the macOS Keychain (W12 contract — never written to disk). `None`/empty
+/// `api_key` leaves the stored key untouched; an explicit empty string clears it.
+/// Runs on the blocking pool (file IO + Keychain).
+#[tauri::command]
+pub async fn save_familiar_config(
+    base_url: Option<String>,
+    api_key: Option<String>,
+) -> AppResult<()> {
+    tauri::async_runtime::spawn_blocking(move || -> AppResult<()> {
+        let paths = Paths::app_support()?;
+        let mut config = AppConfig::load(&paths)?;
+        if let Some(url) = base_url {
+            let trimmed = url.trim();
+            if !trimmed.is_empty() {
+                config.familiar_base_url = trimmed.to_string();
+            }
+        }
+        config.save(&paths)?;
+
+        if let Some(key) = api_key {
+            let store = KeychainStore::new();
+            if key.is_empty() {
+                store.delete()?;
+            } else {
+                store.set(&key)?;
+            }
+        }
+        Ok(())
+    })
+    .await
+    .map_err(|e| AppError::Internal(format!("save_familiar_config task join: {e}")))?
 }
 
 /// Two-stage probe of the optional Familiar service. Returns a `FamiliarProbe`

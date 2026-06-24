@@ -61,9 +61,10 @@ macro_rules! register_commands {
             $crate::commands::vibrancy::get_blurred_hero,
             // fleet (W11)
             $crate::commands::fleet::get_fleet_status,
-            // familiar (W12)
+            // familiar (W12; save_familiar_config glue for W15 settings)
             $crate::commands::familiar::probe_familiar,
             $crate::commands::familiar::enrich_game,
+            $crate::commands::familiar::save_familiar_config,
             // controllers (W14)
             $crate::commands::controllers::list_bindings,
             $crate::commands::controllers::set_binding,
