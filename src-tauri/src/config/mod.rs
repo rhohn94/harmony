@@ -19,7 +19,7 @@ use serde::{Deserialize, Serialize};
 pub const CONFIG_SCHEMA_VERSION: u32 = 1;
 
 /// Default Familiar enrichment base URL (no magic strings at call sites).
-pub const DEFAULT_FAMILIAR_BASE_URL: &str = "http://127.0.0.1:8765";
+pub const DEFAULT_FAMILIAR_BASE_URL: &str = "http://127.0.0.1:2121";
 
 /// File-backed application configuration. `#[serde(default)]` makes every field
 /// optional on disk so older/partial files load cleanly and forward-compatibly.

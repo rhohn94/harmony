@@ -71,9 +71,11 @@ impl RunRecord {
     }
 
     /// Write this record to `run.json` in the deployed version dir for
-    /// `version` (`deployed-apps/harmony/versions/{version}/run.json`).
+    /// `version` (`deployed-apps/harmony/versions/v{version}/run.json`).
+    /// Deployed dirs are v-prefixed per architecture §4.2, matching the
+    /// Fleet manifest (W11) so `run.json` and `fleet-instance.json` co-locate.
     pub fn write(&self, paths: &Paths, version: &str) -> AppResult<()> {
-        let dir = paths.deployed_version_dir(version)?;
+        let dir = paths.deployed_version_dir(&format!("v{version}"))?;
         let file = dir.join(RUN_FILE_NAME);
         let json = serde_json::to_vec_pretty(self)?;
         std::fs::write(&file, json)?;
@@ -138,7 +140,7 @@ mod tests {
         let r = record_run_start(&paths, "0.1.0").expect("write");
 
         let file = paths
-            .deployed_version_dir("0.1.0")
+            .deployed_version_dir("v0.1.0")
             .unwrap()
             .join(RUN_FILE_NAME);
         assert!(file.exists());

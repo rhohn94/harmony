@@ -57,7 +57,7 @@ mod tests {
 
     #[test]
     fn short_input_is_not_a_header() {
-        assert!(!has_ines_header(&[b'N', b'E', b'S']));
-        assert_eq!(strip_ines_header(&[b'N', b'E', b'S']), &[b'N', b'E', b'S']);
+        assert!(!has_ines_header(b"NES"));
+        assert_eq!(strip_ines_header(b"NES"), b"NES");
     }
 }
