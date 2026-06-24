@@ -3,25 +3,29 @@
 //! `register_commands!` macro (see `commands/mod.rs`). Master contract §1.2.
 
 pub mod commands;
+pub mod config;
 pub mod db; // W3 — SQLite persistence (handle, migrations, repos)
 pub mod error;
+pub mod telemetry;
 
 use tauri::Manager;
 
-/// One-time app setup hook. Later items wire config load, telemetry, and the
-/// fleet server here (W4/W11). W3 wires db open + migrate.
-///
-/// Each item adds its own block below the marker and stays append-friendly so
-/// W2/W4 merge by concatenation. W3's block opens the database under app-support
-/// (running migrations) and stores the `Db` handle in Tauri app state.
+/// One-time app setup hook. Each work item appends an independent block here.
+/// W4 resolves the app-support layout + config + telemetry; W3 opens the
+/// database (running migrations) at the W4-resolved path and manages the `Db`
+/// handle in Tauri app state; W11 appends the fleet server below.
 fn harmony_setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    // --- W3: database ---
-    // W4 SEAM: `db::default_db_path()` uses a local minimal app-support resolver;
-    // swap it for W4's `config::paths` resolver when that lands (see db/mod.rs).
-    let db_path = db::default_db_path()?;
-    let database = db::Db::open(&db_path)?;
+    // --- W4: app-support layout, config, run-start telemetry ---
+    let paths = config::paths::Paths::app_support()?;
+    paths.ensure_all()?;
+    let _config = config::AppConfig::load_or_init(&paths)?;
+    telemetry::record_run_start(&paths, env!("CARGO_PKG_VERSION"))?;
+
+    // --- W3: database (path comes from W4's resolver — reconciliation seam) ---
+    let database = db::Db::open(&paths.db_file()?)?;
     app.manage(database);
-    // --- APPEND FURTHER SETUP BLOCKS BELOW THIS LINE (W4/W11) ---
+
+    // --- APPEND FURTHER SETUP BLOCKS BELOW THIS LINE (W11) ---
     Ok(())
 }
 
