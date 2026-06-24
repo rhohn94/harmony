@@ -1,7 +1,7 @@
 ---
 source: submodule
 source-url: https://github.com/rhohn94/design-language
-source-sha: "PLACEHOLDER_SUBMODULE_SHA"  # W2 pins the real SHA
+source-sha: "83c50b3fa0014433abd0ce783ae5911b8a29f1d4"  # W2 pinned (v3.20 channel)
 source-pin: "v3.20"  # stable release channel; bare vX.Y.Z tags carry no assets
 adaptation-status: draft
 ---
@@ -80,8 +80,8 @@ so the full source tree — including `bindings/react` — is present in-repo.
   W2/W19 agree). Resolves to `…/design-language` checked out at the pinned SHA.
 - **Pinned ref:** `v3.20` is the **stable release channel**. Bare `v3.446`-style
   tags carry **no assets** and are not used as the Harmony pin.
-- **Pinned SHA:** `PLACEHOLDER_SUBMODULE_SHA` — **W2 fills the real SHA** when it
-  adds the submodule; this doc's front-matter `source-sha` is updated in the same
+- **Pinned SHA:** `83c50b3fa0014433abd0ce783ae5911b8a29f1d4` — pinned by **W2** on
+  the `v3.20` channel; this doc's front-matter `source-sha` is updated in the same
   change. W19 reconciles this submodule pin with the Dependency Channel /
   `vendor.toml` (see [../dependency-channel-conformance.md](../dependency-channel-conformance.md)).
 
@@ -303,8 +303,8 @@ Dependency-Channel reconciliation.
 
 ## Open questions
 
-- Final pinned SHA on the `v3.20` channel — **W2** resolves and writes it here +
-  in front-matter.
+- ~~Final pinned SHA on the `v3.20` channel~~ — **resolved by W2**:
+  `83c50b3fa0014433abd0ce783ae5911b8a29f1d4` (written here + in front-matter).
 - Whether a light `theme-harmony-dusk` ships in v0.1 or defers to a later release.
 - Whether W19 mirrors the submodule into `vendor.toml` or keeps the submodule as
   the source of truth (reconciliation owned by W19).

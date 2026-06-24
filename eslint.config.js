@@ -11,6 +11,9 @@ export default tseslint.config(
       "src-tauri/**",
       "node_modules/**",
       ".claude/**",
+      // The Aura design language is vendored as a git submodule (W2); it is
+      // third-party source pinned at v3.20 and is not linted by Harmony.
+      "vendor/**",
       "*.config.js",
       "*.config.ts",
     ],
