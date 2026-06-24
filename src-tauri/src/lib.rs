@@ -42,7 +42,10 @@ fn harmony_setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>>
 
 /// Build, register commands, and run the Harmony application.
 pub fn run() {
-    let builder = tauri::Builder::default().setup(harmony_setup);
+    // --- W17: opener plugin — allows the frontend to open URLs in the system browser ---
+    let builder = tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
+        .setup(harmony_setup);
 
     // The macro is the ONLY place the invoke_handler is assembled; domain items
     // append their commands inside it (commands/mod.rs), never here.

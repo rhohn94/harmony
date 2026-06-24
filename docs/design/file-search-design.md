@@ -115,7 +115,49 @@ Example: `"https://duckduckgo.com/?q={query}"` + `"super mario"` → `"https://d
 
 ---
 
-## 8. Open questions / W17 integration
+## 8. Open questions / future
 
-- W17 (file-search UI screen) owns the React layer at `src/features/search/`. It calls `runSearch`, receives `SearchResult[]`, and passes each `url` to Tauri's `shell.open()` to open in the system browser.
 - Future: provider import/export, reorder by drag-and-drop, per-provider search shortcut.
+
+---
+
+## UI (W17)
+
+**Route:** `/search` — `src/features/search/SearchPage.tsx`.
+
+### Components
+
+| File | Role |
+|---|---|
+| `SearchPage.tsx` | Top-level page: query field, provider chips, results list, empty state |
+| `ProviderDialog.tsx` | Add / edit provider sheet (`<aura-dialog>`) |
+| `search.test.ts` | Unit tests for form validation and SearchResult shape invariants |
+
+### Link-open seam
+
+`SearchPage` imports `open` from `@tauri-apps/plugin-opener` and calls
+`open(result.url)` when the user activates a result row. The backend constructs
+the URL; the frontend never fetches it. Requires:
+- Rust: `tauri-plugin-opener = "2"` in `Cargo.toml`; `.plugin(tauri_plugin_opener::init())` in `lib.rs`.
+- Capability: `"opener:default"` appended to `src-tauri/capabilities/default.json`.
+- JS: `@tauri-apps/plugin-opener` in `package.json` dependencies.
+
+### Empty state
+
+When `listProviders()` returns an empty array, the page renders an `EmptyState`
+card guiding the user to add their first provider via the add-provider dialog.
+
+### Controller navigation
+
+Focus order: query `<aura-field>` → provider chip buttons (toggle / edit / remove)
+→ Add button → result rows (each a `<button>`). `confirm` on a result row calls
+`open(url)`. The `<aura-dialog>` sheet (add/edit) traps focus; `Escape` closes it.
+
+### Shared-file lines added (W17)
+
+- `src/routes.tsx` line ~10: `import { SearchPage } from "./features/search/SearchPage";`
+- `src/routes.tsx` line ~51: `element: <SearchPage />,` (replaces W17 placeholder)
+- `src-tauri/capabilities/default.json`: `"opener:default"` appended to permissions array
+- `src-tauri/Cargo.toml`: `tauri-plugin-opener = "2"` appended to `[dependencies]`
+- `src-tauri/src/lib.rs`: `.plugin(tauri_plugin_opener::init())` added to builder chain
+- `package.json`: `"@tauri-apps/plugin-opener": "^2.5.4"` added to dependencies
