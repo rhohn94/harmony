@@ -321,3 +321,43 @@ quick crossfade when the active device family changes. No blur.
   (on-screen keyboard vs. macOS dictation) — resolve in W14/W17.
 - Whether the hero teaser on `/` reuses the full Game-detail component or a
   lighter variant — resolve in W13.
+
+## Implementation (W15)
+
+`src/features/settings/SettingsPage.tsx` — two-column sectioned-form archetype.
+
+**Section nav (left column):** native `<nav>` with seven `<button>` items (tabIndex for
+controller focus). Active section highlighted with `--aura-primary` background.
+
+**Section panes (right column):**
+
+- **Folders** (`FoldersPane`): lists `ContentFolder[]` via `listContentFolders()`; add
+  path via text input → `addContentFolder()` then `scanFolder()` immediately; remove via
+  `removeContentFolder()`; rescan per folder via `scanFolder()`. Scan result summary shown inline.
+- **Cores** (`CoresPane`): groups installed cores by system via `listInstalledCores()`; per-system
+  `<AuraSelect>` drives `setActiveCore()`. Deep-link to `/cores` available to install new cores.
+- **Controllers** (`ControllersPane`): stub placeholder — the binding editor is W14
+  (`controller-input-design.md`). Pane text explains the dependency.
+- **Providers** (`ProvidersPane`): CRUD for `SearchProvider` via `listProviders()`,
+  `addProvider()`, `updateProvider()` (toggle enabled), `removeProvider()`. URL templates
+  validated for `{query}` placeholder before save.
+- **Familiar** (`FamiliarPane`): probes status via `probeFamiliar()` on mount; editable
+  base URL + API key inputs. Key sent via `invoke("save_familiar_config", …)` and immediately
+  cleared from state — never stored client-side (W12 contract). Key reaches Keychain via the
+  familiar backend.
+- **Appearance** (`AppearancePane`): `<AuraSelect>` + quick-select buttons wired to
+  `useAuraTheme().setTheme()`. Applies immediately; persists to `localStorage` via `AuraProvider`
+  so the anti-FOUC head script reads it on next cold start.
+- **RetroArch** (`RetroArchPane`): loads current path via `invoke("get_retroarch_path")` (silent
+  degrade if command not yet wired); saves via `invoke("set_retroarch_path", { path })`.
+
+**IPC:** all domain reads/writes go through the existing typed wrappers in `src/ipc/`; the
+settings pane uses `src/ipc/invoke` directly only for `save_familiar_config`,
+`get_retroarch_path`, and `set_retroarch_path` (domain-level wrappers for these will land when
+W4/the settings backend finalises).
+
+**Routing:** `src/routes.tsx` updated — the `/settings` entry now imports and renders
+`<SettingsPage />` instead of the W15 placeholder.
+
+**Aura usage:** `AuraButton`, `AuraField`, `AuraSelect` from `@aura/react`; `events`/`class`
+contract followed on all Aura wrappers; native HTML elements use `className`.
