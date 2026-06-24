@@ -236,6 +236,20 @@ impl LibraryRepo<'_> {
         })
     }
 
+    /// Update a game's `clean_name` (W12 Familiar enrichment writes the
+    /// disambiguated title here). NotFound if absent.
+    pub fn set_game_clean_name(&self, id: i64, clean_name: &str) -> AppResult<()> {
+        self.db.with_conn(|c| {
+            let n = c
+                .execute(
+                    "UPDATE games SET clean_name = ?1 WHERE id = ?2",
+                    params![clean_name, id],
+                )
+                .map_err(map_sqlite)?;
+            require_affected(n)
+        })
+    }
+
     /// Delete a game (cascades to its art_cache rows). NotFound if absent.
     pub fn delete_game(&self, id: i64) -> AppResult<()> {
         self.db.with_conn(|c| {
