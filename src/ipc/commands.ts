@@ -13,7 +13,7 @@ export * from "./health";
 // export * from "./cores";       // W5/W16
 // export * from "./launch";      // W7
 // export * from "./metadata";    // W8
-// export * from "./search";      // W9/W17
+export * from "./search"; // W9/W17
 // export * from "./vibrancy";    // W10
 // export * from "./fleet";       // W11
 // export * from "./familiar";    // W12

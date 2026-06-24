@@ -12,7 +12,7 @@ pub mod health; // W1 — liveness stub (ping)
 // pub mod cores;       // W5/W16
 // pub mod launch;      // W7
 // pub mod metadata;    // W8
-// pub mod search;      // W9/W17
+pub mod search; // W9/W17
 // pub mod vibrancy;    // W10
 // pub mod fleet;       // W11
 // pub mod familiar;    // W12
@@ -32,6 +32,12 @@ macro_rules! register_commands {
             // --- APPEND COMMAND PATHS BELOW THIS LINE (one per line) ---
             // $crate::commands::library::scan_folder,
             // $crate::commands::library::list_games,
+            // search (W9)
+            $crate::commands::search::list_providers,
+            $crate::commands::search::add_provider,
+            $crate::commands::search::update_provider,
+            $crate::commands::search::remove_provider,
+            $crate::commands::search::run_search,
         ])
     };
 }
