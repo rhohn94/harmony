@@ -7,6 +7,7 @@
 // render end-to-end now; later items swap the `element` for the real screen.
 
 import type { ReactElement } from "react";
+import { CoresPage } from "./features/cores";
 
 /** One screen in the app: a route path, its element, and a nav label. */
 export interface HarmonyRoute {
@@ -43,7 +44,7 @@ export const HARMONY_ROUTES: readonly HarmonyRoute[] = [
   {
     path: "/cores",
     navLabel: "Cores",
-    element: <Placeholder title="Cores" owner="W16" />,
+    element: <CoresPage />, // W16
   },
   {
     path: "/search",
