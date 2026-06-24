@@ -1,6 +1,6 @@
 ---
 name: release-phase-merge
-description: Merge completed subagent branches into version/{X.Y} autonomously — no per-merge confirmation. Runs tests after each merge, ticks §5, and drives the final version/{X.Y}→dev merge unsupervised. Stops only on conflict, test failure, or push trigger. Use when the user says "merge agent X", "phase N is done, merge it", or "all agents done". Handles both isolated-worktree work-item branches and write-capable workflow branches. Push to origin remains human-gated.
+description: Merge completed subagent branches into version/{X.Y} autonomously — no per-merge confirmation. Runs tests after each merge, ticks §5, and drives the final version/{X.Y}→dev merge unsupervised. Stops only on conflict, test failure, or push trigger. Use when the user says "merge agent X", "merge branch foo", "phase N is done, merge it", "all agents done", or "workflow returned branches". Handles both isolated-worktree subagent work-item branches and write-capable workflow agent branches. Push to origin remains human-gated.
 ---
 
 # Release phase merge (Noir)
@@ -78,16 +78,21 @@ already-documented path. The push gate is unchanged under both dial values
    structured output is the authoritative list (see §Write-capable workflow
    agent branches in `reference.md`).
 
-> **Before-promotion divergence gate (BMI-2, #126).** `merge_preflight` runs a
-> model-aware divergence check before promotion and folds a real fork into
-> `head_ok:false` (report under `divergence`); CLI fallback `python3
-> .claude/skills/release-agent-tracker/release_plan.py divergence-check` (exit 2
-> on divergence; integration line from `branch-model.integration-branch`, default
-> `dev`). It HALTs iff `main` carries tree content unreachable from the
-> integration line and does **not** false-positive on promotion-merge-only
-> `main`. On a HALT: do **not** merge — merge `main` INTO the integration line
-> (merge-forward), never `reset --hard` across the fork. Design:
-> `integration-branch-integrity-design.md` §2/§5.
+> **Before-promotion divergence gate (BMI-2, v3.38, #126).** A promotion targets
+> the published line (`main`) via the integration line, so before **both**
+> promotion boundaries — `version/{X.Y}→dev` *and* `dev→main` — run the
+> model-aware divergence check: it HALTs iff `main` carries tree content not
+> reachable from the integration line, and (crucially) does **not** false-positive
+> when `main` is ahead only by promotion merges. `merge_preflight` already runs it
+> and folds a real fork into `head_ok:false`, surfacing the report under
+> `divergence`. **CLI fallback:** `python3
+> .claude/skills/release-agent-tracker/release_plan.py divergence-check`
+> (exit 2 + a readable report on real divergence; integration line read from
+> `branch-model.integration-branch`, default `dev`). On a HALT, do **not** merge —
+> reconcile by **merging `main` INTO** the integration line (merge-forward); never
+> `reset --hard` across the fork (data loss). See
+> `docs/design/integration-branch-integrity-design.md` §2/§5 and
+> `docs/integration-workflow.md` §merge-forward recovery.
 
 ---
 
@@ -151,39 +156,11 @@ Run in order; first failing **blocking** check stops the merge:
 1. **Type-check / build** (`typecheck: build` → type errors are build failures).
 2. **Coverage** (`coverage-threshold: null` → skip by default).
 3. **Audit gate** (`audit-gate: warn` → file via `feedback-to-issue`, proceed).
-   - **3a. Dependency-channel conformance** (sub-step; **warn-only this
-     release**). When the branch's diff touches `vendor.toml` / `vendor.lock` /
-     `vendor/`, run `python3
-     .claude/skills/dependency-audit/dependency_channel_conformance.py --root .
-     --json` (the `vendor-check` verb's implementation). Reads the **same live
-     `audit-gate` dial**. Each finding is the normalized shape
-     `{check,dep,channel,severity,detail,locked_sha,observed_sha}`. Under
-     `warn`: file each via `feedback-to-issue` (audience `internal`, labels
-     `security` + `dependency-channel`, dedupe key `{channel}:{dep}:{check}`)
-     and **proceed** — it never blocks a merge/release this release. The
-     network "unpublished-release" check degrades gracefully (reported, never a
-     hard fail). A future release flips it to **block** via the same dial with
-     no schema change. Design: `dependency-channel-design.md` §5.
 4. **Auto-Reviewer** (`auto-reviewer: noir` → spawn `reviewer`; blocking
    findings stop, non-blocking become §5 follow-ups).
 
 **On any blocking stop:** `git reset --hard ORIG_HEAD` — undo the merge, leave
 §5 row unticked, record reason in §5 follow-ups. Re-runnable once branch fixed.
-
-### 3b. Doc-assurance --strict gate (v3.36+)
-
-Run `python3 .claude/skills/doc-assurance/doc_assurance.py --strict` as part
-of the release closeout. Response policy based on findings:
-
-- **block** (or `--strict` flag active): If findings from `check_hierarchy` or
-  `check_relative_links` are present, fail the closeout. File each finding via
-  `feedback-to-issue` with label `doc-quality` and type `documentation` before
-  blocking.
-- **warn** (default): Run, print findings, proceed. Route warn-tier findings
-  through `feedback-to-issue` with `doc-quality` area label.
-- **Stealth Mode:** Under `stealth-mode.value: "on"`, suppress the
-  `feedback-to-issue` auto-filing step (per `stealth-guard.sh` restrictions on
-  commit-class actions). Run the check; do not auto-file.
 
 ### 4. Tick §5 ledger
 
