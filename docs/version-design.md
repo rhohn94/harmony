@@ -58,7 +58,7 @@ Pick ONE place to store the authoritative version:
 The release script reads this file, bumps it, and propagates the value to
 anywhere else it appears. Document that location here once you've decided:
 
-> **Version file:** `{path/to/version/file}` — `{field name or format}`
+> **Version file:** `package.json` — `"version"` (single source of truth; `src-tauri/tauri.conf.json` inherits via `"version": "../package.json"`, and `src-tauri/Cargo.toml` is kept in lock-step).
 
 ---
 
@@ -80,7 +80,7 @@ anywhere else it appears. Document that location here once you've decided:
 ### Running the recipe
 
 ```bash
-{release-command}
+pnpm tauri build --target aarch64-apple-darwin   # project-release then tags vX.Y, archives the .app/.dmg, and runs gh release create
 ```
 
 Replace with your actual command (e.g. `npm version minor && npm publish`,

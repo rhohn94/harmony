@@ -18,3 +18,6 @@
 
 # Pristine generation-source folder (populated at bootstrap/sync time; not committed)
 .grimoire-source/
+
+# Transient sync-deps staging dir (cleaned per run)
+.sync-deps-staging/

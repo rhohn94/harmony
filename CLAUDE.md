@@ -1,4 +1,3 @@
-<!-- GRIMOIRE_ONBOARDING_SENTINEL -->
 # CLAUDE.md
 
 Concrete, actionable guidance for working in this repo.
@@ -152,12 +151,12 @@ the quick reference — those docs are authoritative.
 
 | Purpose | Command |
 |---|---|
-| Run tests | `{test-command}` |
-| Build | `{build-command}` |
-| Release | `{release-command}` |
-| Type-check | `{typecheck-command}` |
-| Lint | `{lint-command}` |
-| Coverage | `{coverage-command}` |
+| Run tests | `pnpm test && cargo test --manifest-path src-tauri/Cargo.toml` |
+| Build | `pnpm tauri build` |
+| Release | `pnpm tauri build --target aarch64-apple-darwin` |
+| Type-check | `pnpm typecheck && cargo check --manifest-path src-tauri/Cargo.toml` |
+| Lint | `pnpm lint && cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings` |
+| Coverage | `—` |
 
 All three must pass cleanly before a branch is reported done or merged.
 (Placeholders are filled by the **`workflow-bootstrap`** skill at setup.)
