@@ -7,6 +7,7 @@
 // render end-to-end now; later items swap the `element` for the real screen.
 
 import type { ReactElement } from "react";
+import { CoresPage } from "./features/cores"; // W16
 import { GameDetailPage, LibraryPage } from "./features/library"; // W13
 import { SettingsPage } from "./features/settings/SettingsPage"; // W15
 
@@ -45,7 +46,7 @@ export const HARMONY_ROUTES: readonly HarmonyRoute[] = [
   {
     path: "/cores",
     navLabel: "Cores",
-    element: <Placeholder title="Cores" owner="W16" />,
+    element: <CoresPage />, // W16
   },
   {
     path: "/search",

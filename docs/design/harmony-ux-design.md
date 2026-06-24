@@ -349,6 +349,42 @@ adds `{ path: "/game/:id", element: <GameDetailPage /> }`; `App.tsx` is unchange
 
 **Resolved open question:** the `/` hero is a *lighter* teaser component
 (`HeroTeaser`), not the full detail component — keeping the grid cheap.
+## Implementation (W16)
+
+W16 delivers the Cores Management screen at `/cores` as `src/features/cores/`.
+
+**Files added:**
+- `src/features/cores/useCores.ts` — data-fetching hook; calls `listAvailableCores`,
+  `installCore`, `updateCore`, `setActiveCore` from `src/ipc/cores.ts`; groups cores
+  by system; tracks per-core `"installing" | "updating" | "activating" | null` action
+  state and per-core error (arch-rejection or network).
+- `src/features/cores/CoresPage.tsx` — two-column master–detail layout; ArrowLeft/Right
+  switches focused column (controller nav_left/right); auto-selects the first system on
+  load; crossfades the detail pane with `AnimatePresence` on system change.
+- `src/features/cores/CoreRow.tsx` — one row per core; shows id, version, status badge
+  (● active / ○ installed / – available), inline action buttons (Install / Update /
+  Set active), a CSS spinner while a long action is in flight, and an inline error card
+  for `Unsupported` (non-arm64) or network failures.
+- `src/features/cores/SystemList.tsx` — focusable system list; ArrowUp/Down navigates
+  within the list; selection drives the detail pane.
+- `src/features/cores/cores.css` — `cores-spin` keyframe; focus-ring wiring for
+  keyboard/controller nav; translucent shelf hover style.
+- `src/features/cores/index.ts` — barrel exporting `CoresPage`.
+
+**Shared-file edits:**
+- `src/routes.tsx`: added `import { CoresPage } from "./features/cores";` and swapped
+  the `/cores` placeholder element from `<Placeholder title="Cores" owner="W16" />` to
+  `<CoresPage />`.
+
+**Design decisions:**
+- Status badge transition uses Framer Motion `layout="position"` so the badge springs
+  in place when `setActiveCore` flips the active flag (exactly-one-active per system
+  enforced by the W3 partial-unique index on the Rust side).
+- Arch-rejection (`AppError.kind === "unsupported"`) surfaces as the inline error card
+  on the affected row, never a crash or modal.
+- `AnimatePresence mode="wait"` on the detail column prevents a flash when switching
+  systems quickly.
+- No blur filters anywhere (architecture §5.2).
 
 ## Open questions
 
