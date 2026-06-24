@@ -24,18 +24,6 @@ export interface HarmonyRoute {
   index?: boolean;
 }
 
-/** A minimal themed placeholder screen until the owning work item ships. */
-function Placeholder({ title, owner }: { title: string; owner: string }) {
-  return (
-    <section className="harmony-panel" style={{ padding: 24, borderRadius: 12 }}>
-      <h2 style={{ marginTop: 0 }}>{title}</h2>
-      <p style={{ color: "var(--aura-on-surface-muted)" }}>
-        Placeholder screen — implemented by {owner}.
-      </p>
-    </section>
-  );
-}
-
 // APPEND POINT — each screen item adds ONE object. Keep ordered by route.
 export const HARMONY_ROUTES: readonly HarmonyRoute[] = [
   {
