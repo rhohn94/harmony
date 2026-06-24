@@ -7,6 +7,7 @@
 // render end-to-end now; later items swap the `element` for the real screen.
 
 import type { ReactElement } from "react";
+import { GameDetailPage, LibraryPage } from "./features/library"; // W13
 
 /** One screen in the app: a route path, its element, and a nav label. */
 export interface HarmonyRoute {
@@ -38,7 +39,7 @@ export const HARMONY_ROUTES: readonly HarmonyRoute[] = [
     path: "/",
     index: true,
     navLabel: "Library",
-    element: <Placeholder title="Library" owner="W13" />,
+    element: <LibraryPage />,
   },
   {
     path: "/cores",
@@ -55,5 +56,8 @@ export const HARMONY_ROUTES: readonly HarmonyRoute[] = [
     navLabel: "Settings",
     element: <Placeholder title="Settings" owner="W15" />,
   },
-  // { path: "/game/:id", element: <GameDetail /> },  // W13 (no nav entry)
+  {
+    path: "/game/:id",
+    element: <GameDetailPage />,
+  }, // W13 (no nav entry)
 ];

@@ -315,6 +315,41 @@ quick crossfade when the active device family changes. No blur.
 - File search (W9/W17): `file-search-design.md`
 - Native vibrancy seam (D2): `native-vibrancy-design.md`
 
+## Implementation (W13)
+
+The library grid + hero + detail screens are implemented under
+`src/features/library/`:
+
+- **`LibraryPage.tsx`** (`/`) — gallery archetype. Loads `list_games`, renders a
+  responsive `<aura-card>` tile grid (`.harmony-grid`, `auto-fill`), a system
+  filter (focusable tab-pills; `<aura-tabs>` was deferred because its
+  selection-event contract is undocumented in the pinned Aura — pills keep the
+  screen controller-focusable today), and a hero teaser. Focusing/hovering a tile
+  updates the hero + backdrop.
+- **`GameDetailPage.tsx`** (`/game/:id`) — detail archetype. `get_game` → cover +
+  metadata `<aura-list>`-style rows; primary **Play** (`launch_game`), secondary
+  **Get art** (`fetch_boxart`), Back (`navigate(-1)`). Enters via an
+  opacity+scale spring.
+- **`HeroBackdrop.tsx`** — full-bleed pre-blurred art from `get_blurred_hero`,
+  **crossfaded** via Framer Motion `AnimatePresence` on selection change. No CSS
+  blur — the bitmap is the backend's pre-blurred handoff, only scaled + dimmed.
+- **`useBoxart.ts`** — cover-art resolution with graceful fallback:
+  `Game.artPath` → `get_cached_art` → (detail only) `fetch_boxart` → placeholder.
+- **`art.ts`** — `convertFileSrc` wrapper turning filesystem art paths into
+  webview asset URLs; degrades to `null` (placeholder) outside the Tauri webview.
+- **`library.css`** — feature styles in the `harmony-theme` override layer;
+  translucent `--aura-shelf/panel-alpha` shelves (vibrancy reads through), visible
+  `--aura-focus` rings on every focusable control (controller-nav-ready ahead of
+  W14), and a `prefers-reduced-motion` collapse.
+
+Aura wrappers use the `events`/`class` contract (never `onChange`/`className`).
+Routing: `routes.tsx` swaps the W13 placeholder for `<LibraryPage />` at `/` and
+adds `{ path: "/game/:id", element: <GameDetailPage /> }`; `App.tsx` is unchanged
+(each screen self-mounts its `HeroBackdrop`).
+
+**Resolved open question:** the `/` hero is a *lighter* teaser component
+(`HeroTeaser`), not the full detail component — keeping the grid cheap.
+
 ## Open questions
 
 - Gamepad text-entry mechanism for the search query + provider URL templates
