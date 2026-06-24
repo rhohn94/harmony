@@ -16,6 +16,6 @@ export * from "./health";
 // export * from "./search";      // W9/W17
 // export * from "./vibrancy";    // W10
 // export * from "./fleet";       // W11
-// export * from "./familiar";    // W12
+export * from "./familiar"; // W12
 // export * from "./settings";    // W4/W15
 // export * from "./controllers"; // W14

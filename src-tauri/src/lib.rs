@@ -4,6 +4,7 @@
 
 pub mod commands;
 pub mod config;
+pub mod core; // domain logic root (W12 familiar, …)
 pub mod db; // W3 — SQLite persistence (handle, migrations, repos)
 pub mod error;
 pub mod telemetry;

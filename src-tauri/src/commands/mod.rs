@@ -8,6 +8,7 @@
 
 pub mod health; // W1 — liveness stub (ping)
 // --- APPEND DOMAIN MODULE DECLARATIONS BELOW THIS LINE ---
+pub mod familiar; // W12
 // pub mod library;     // W6/W13
 // pub mod cores;       // W5/W16
 // pub mod launch;      // W7
@@ -30,8 +31,9 @@ macro_rules! register_commands {
             // health (W1)
             $crate::commands::health::ping,
             // --- APPEND COMMAND PATHS BELOW THIS LINE (one per line) ---
-            // $crate::commands::library::scan_folder,
-            // $crate::commands::library::list_games,
+            // familiar (W12)
+            $crate::commands::familiar::probe_familiar,
+            $crate::commands::familiar::enrich_game,
         ])
     };
 }
