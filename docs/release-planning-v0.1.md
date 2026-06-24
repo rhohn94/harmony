@@ -228,11 +228,24 @@ Deferred to **v0.2** (see roadmap): ScreenScraper metadata (user API key); deepe
 ### Pass 3 — Integrate / verify / ship
 | Branch | Design doc | Implemented | Reviewed | Merged into version/0.1 |
 |---|---|---|---|---|
-| `work/w18-smoke` (W18) | ☐ | ☐ | ☐ | ☐ |
-| `work/w19-depchannel` (W19) | ☐ | ☐ | ☐ | ☐ |
-| `work/w20-readme` (W20) | ☐ | ☐ | ☐ | ☐ |
+| `work/w18-smoke` (W18) | ☑ | ☑ | ☑ | ☑ |
+| `work/w19-depchannel` (W19) | ☑ | ☑ | ☑ | ☑ |
+| `work/w20-readme` (W20) | ☑ | ☑ | ☑ | ☑ |
 | `work/w21-release` (W21) | ☐ | ☐ | ☐ | ☐ |
 
 ### Follow-ups discovered during implementation
 
-_(empty at start; populated by release-phase-merge as branches land.)_
+- **Full-UI headless screenshot (v0.2):** the W18 visual-inspection capture renders
+  the web bundle without a Tauri IPC runtime, so mount-time `invoke` calls fail and
+  `#root` renders empty (only the Aura theme + brand-gradient backdrop show). Add a
+  mock-IPC harness so the smoke screenshot captures populated shelves.
+- **Reconciliations applied at integration:** Familiar default URL unified to
+  `127.0.0.1:2121` (was `8765` in W4); deployed version dir unified to the
+  v-prefixed `v0.1.0` across W4 telemetry + W11 fleet (architecture §4.2).
+- **Settings glue:** added `save_familiar_config` (base URL → config, key → Keychain)
+  to wire W15 settings to the W12 backend.
+- **Dependency Channel ↔ submodule:** `sync-deps` cannot model a git submodule;
+  Aura is recorded via a `[submodules.aura]` table in `vendor.toml`/`vendor.lock`
+  (kind `git-submodule`), not an asset-bundle `[deps.aura]` (design-language#858).
+- **Live-hardware controller test:** W14's gamepad polling (`useGamepadPoll`) is
+  unit-tested for the semantic/spatial logic only; real-pad verification is deferred.
