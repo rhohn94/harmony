@@ -4,6 +4,7 @@
 
 pub mod commands;
 pub mod config;
+pub mod core; // W6 — pure domain logic (library scan/identify, …)
 pub mod db; // W3 — SQLite persistence (handle, migrations, repos)
 pub mod error;
 pub mod telemetry;

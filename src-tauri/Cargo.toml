@@ -23,7 +23,11 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
 # --- APPEND DOMAIN DEPENDENCIES BELOW THIS LINE ---
+crc32fast = "1"                                            # W6 (CRC32 ROM hashing)
 dirs = "5"                                                 # W4 (app-support path resolution)
+md-5 = "0.10"                                              # W6 (MD5 ROM hashing)
+quick-xml = "0.36"                                         # W6 (No-Intro Logiqx DAT parsing)
 rusqlite = { version = "0.32", features = ["bundled"] }    # W3 (db)
+walkdir = "2"                                              # W6 (recursive folder walker)
 # image = "..."                                            # W10 (vibrancy blur)
 # reqwest = { version = "...", features = ["json"] }       # W5/W8/W12 (network)
