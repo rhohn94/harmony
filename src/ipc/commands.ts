@@ -8,6 +8,7 @@
 // within the block for predictable diffs.
 
 export * from "./error";
+export * from "./fleet"; // W11
 export * from "./health";
 export * from "./cores"; // W5/W16
 export * from "./library"; // W6/W13
