@@ -17,7 +17,7 @@ pub mod vibrancy; // W10
 pub mod fleet; // W11
 pub mod familiar; // W12
 // pub mod settings;    // W4/W15
-// pub mod controllers; // W14
+pub mod controllers; // W14
 
 /// Single source of truth for the Tauri invoke_handler. The builder invokes
 /// this macro exactly once (in `lib.rs`). Each domain contributes its command
@@ -64,6 +64,9 @@ macro_rules! register_commands {
             // familiar (W12)
             $crate::commands::familiar::probe_familiar,
             $crate::commands::familiar::enrich_game,
+            // controllers (W14)
+            $crate::commands::controllers::list_bindings,
+            $crate::commands::controllers::set_binding,
         ])
     };
 }
