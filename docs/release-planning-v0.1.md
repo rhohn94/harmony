@@ -207,14 +207,14 @@ Deferred to **v0.2** (see roadmap): ScreenScraper metadata (user API key); deepe
 ### Pass 1 — Rust backends
 | Branch | Design doc | Implemented | Reviewed | Merged into version/0.1 |
 |---|---|---|---|---|
-| `work/w5-cores` (W5) | ☐ | ☐ | ☐ | ☐ |
-| `work/w6-library` (W6) | ☐ | ☐ | ☐ | ☐ |
-| `work/w7-launch` (W7) | ☐ | ☐ | ☐ | ☐ |
-| `work/w8-metadata` (W8) | ☐ | ☐ | ☐ | ☐ |
-| `work/w9-search` (W9) | ☐ | ☐ | ☐ | ☐ |
-| `work/w10-blur` (W10) | ☐ | ☐ | ☐ | ☐ |
-| `work/w11-fleet` (W11) | ☐ | ☐ | ☐ | ☐ |
-| `work/w12-familiar` (W12) | ☐ | ☐ | ☐ | ☐ |
+| `work/w5-cores` (W5) | ☑ | ☑ | ☑ | ☑ |
+| `work/w6-library` (W6) | ☑ | ☑ | ☑ | ☑ |
+| `work/w7-launch` (W7) | ☑ | ☑ | ☑ | ☑ |
+| `work/w8-metadata` (W8) | ☑ | ☑ | ☑ | ☑ |
+| `work/w9-search` (W9) | ☑ | ☑ | ☑ | ☑ |
+| `work/w10-blur` (W10) | ☑ | ☑ | ☑ | ☑ |
+| `work/w11-fleet` (W11) | ☑ | ☑ | ☑ | ☑ |
+| `work/w12-familiar` (W12) | ☑ | ☑ | ☑ | ☑ |
 
 ### Pass 2 — Frontend
 | Branch | Design doc | Implemented | Reviewed | Merged into version/0.1 |
