@@ -10,7 +10,7 @@ pub mod health; // W1 — liveness stub (ping)
 // --- APPEND DOMAIN MODULE DECLARATIONS BELOW THIS LINE ---
 // pub mod library;     // W6/W13
 // pub mod cores;       // W5/W16
-// pub mod launch;      // W7
+pub mod launch;      // W7
 // pub mod metadata;    // W8
 // pub mod search;      // W9/W17
 // pub mod vibrancy;    // W10
@@ -32,6 +32,10 @@ macro_rules! register_commands {
             // --- APPEND COMMAND PATHS BELOW THIS LINE (one per line) ---
             // $crate::commands::library::scan_folder,
             // $crate::commands::library::list_games,
+            // launch (W7)
+            $crate::commands::launch::launch_game,
+            $crate::commands::launch::locate_retroarch,
+            $crate::commands::launch::set_retroarch_path,
         ])
     };
 }

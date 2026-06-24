@@ -4,6 +4,7 @@
 
 pub mod commands;
 pub mod config;
+pub mod core; // W7 — core business-logic modules (launch, …)
 pub mod db; // W3 — SQLite persistence (handle, migrations, repos)
 pub mod error;
 pub mod telemetry;
