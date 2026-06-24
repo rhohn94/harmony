@@ -199,7 +199,7 @@ Deferred to **v0.2** (see roadmap): ScreenScraper metadata (user API key); deepe
 ### Pass 0 — Scaffold
 | Branch | Design doc | Implemented | Reviewed | Merged into version/0.1 |
 |---|---|---|---|---|
-| `work/w1-scaffold` (W1) | ☐ | ☐ | ☐ | ☐ |
+| `work/w1-scaffold` (W1) | ☑ | ☑ | ☑ | ☑ |
 | `work/w2-aura` (W2) | ☐ | ☐ | ☐ | ☐ |
 | `work/w3-sqlite` (W3) | ☐ | ☐ | ☐ | ☐ |
 | `work/w4-infra` (W4) | ☐ | ☐ | ☐ | ☐ |
