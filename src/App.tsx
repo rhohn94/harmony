@@ -13,6 +13,7 @@ import { NavLink, Route, Routes } from "react-router-dom";
 import { AuraApp } from "@aura/react";
 import { isAppError, ping } from "./ipc/commands";
 import { HARMONY_ROUTES } from "./routes";
+import { ControllerProvider, HintBar } from "./features/controller";
 
 // Left inset reserves room for the native traffic-light controls so the top bar
 // content never renders under them (D2 §5: ~78x28pt controls → 72-80px inset).
@@ -100,26 +101,49 @@ function App() {
     // AuraApp is the app-shell archetype root; it paints transparent so vibrancy
     // reads through (theme/aura-theme.css). The wrapper bridges React to the
     // custom element's events/class contract (design-language.md §7.2).
-    <AuraApp className="harmony-shell" style={{ display: "block", minHeight: "100vh" }}>
-      <div
-        data-tauri-drag-region
-        style={{
-          height: DRAG_STRIP_HEIGHT_PX,
-          paddingLeft: TRAFFIC_LIGHT_INSET_PX,
-          width: "100%",
-        }}
-      />
-      <div style={{ display: "flex", minHeight: `calc(100vh - ${DRAG_STRIP_HEIGHT_PX}px)` }}>
-        <Sidebar />
-        <main style={{ flex: 1, padding: 24, overflow: "auto" }}>
-          <Routes>
-            {HARMONY_ROUTES.map((r) => (
-              <Route key={r.path} path={r.path} element={r.element} />
-            ))}
-          </Routes>
-        </main>
-      </div>
-    </AuraApp>
+    // ControllerProvider owns spatial focus + gamepad polling so the whole app
+    // is navigable by controller alone (W14). The persistent HintBar footer
+    // shows the focused context's button hints; screens supply their own hints
+    // via a nested <HintBar> when they need richer context.
+    <ControllerProvider>
+      <AuraApp className="harmony-shell" style={{ display: "block", minHeight: "100vh" }}>
+        <div
+          data-tauri-drag-region
+          style={{
+            height: DRAG_STRIP_HEIGHT_PX,
+            paddingLeft: TRAFFIC_LIGHT_INSET_PX,
+            width: "100%",
+          }}
+        />
+        <div style={{ display: "flex", minHeight: `calc(100vh - ${DRAG_STRIP_HEIGHT_PX}px)` }}>
+          <Sidebar />
+          <main
+            style={{
+              flex: 1,
+              padding: 24,
+              overflow: "auto",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <div style={{ flex: 1 }}>
+              <Routes>
+                {HARMONY_ROUTES.map((r) => (
+                  <Route key={r.path} path={r.path} element={r.element} />
+                ))}
+              </Routes>
+            </div>
+            <HintBar
+              hints={[
+                { action: "confirm", label: "Select" },
+                { action: "back", label: "Back" },
+                { action: "menu", label: "Menu" },
+              ]}
+            />
+          </main>
+        </div>
+      </AuraApp>
+    </ControllerProvider>
   );
 }
 
