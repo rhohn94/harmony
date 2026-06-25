@@ -1,4 +1,11 @@
 {
+    "permissions": {
+        "allow": [
+            "Bash(.claude/skills/sync-from-upstream/sync-from-upstream.sh*)",
+            "Bash(.claude/skills/grm-sync-from-upstream/sync-from-upstream.sh*)",
+            "Write(.scaffold-upstream.conf)"
+        ]
+    },
     "hooks": {
         "PreToolUse": [
             {

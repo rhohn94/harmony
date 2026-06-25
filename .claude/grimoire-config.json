@@ -1,5 +1,6 @@
 {
   "schema-version": 4,
+  "framework-version": 51,
   "name": "Harmony",
   "work-paradigm": {
     "value": "Noir"
