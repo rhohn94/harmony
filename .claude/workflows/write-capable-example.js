@@ -14,7 +14,7 @@ export const meta = {
 // WRITE-CAPABLE WORKFLOW — REFERENCE IMPLEMENTATION
 //
 // This script demonstrates the full write-capable tier contract specified in
-// docs/design/write-capable-workflow-design.md. It is the canonical reference
+// docs/grimoire/design/write-capable-workflow-design.md. It is the canonical reference
 // for NW3 (isolated-worktree parallel execution + master-merge orchestration +
 // the three execution variants).
 //
@@ -46,7 +46,7 @@ export const meta = {
 //   The script returns:
 //     { branches: [ { branch, mergeAfter, result }, … ] }
 //   The master calls release-phase-merge with this list, following mergeAfter
-//   ordering. See docs/design/write-capable-workflow-design.md §2.3–2.4.
+//   ordering. See docs/grimoire/design/write-capable-workflow-design.md §2.3–2.4.
 //
 // Invoke:
 //   Workflow({ name: 'write-capable-example' })
@@ -61,12 +61,12 @@ export const meta = {
 // This check is explicit, early, and fail-closed. A write-capable workflow
 // invoked under Supervised or Weiss fails immediately with a clear error rather
 // than silently degrading or producing partial output.
-// See docs/design/write-capable-workflow-design.md §1.2.
+// See docs/grimoire/design/write-capable-workflow-design.md §1.2.
 // ---------------------------------------------------------------------------
 if (meta.tier === 'write-capable' && activeParadigm() !== 'Noir') {
   throw new Error(
     'write-capable workflows require the Noir paradigm. ' +
-    'Switch paradigm (work-paradigm-switch skill) or use a read-only workflow.'
+    'Switch paradigm (grm-work-paradigm-switch skill) or use a read-only workflow.'
   )
 }
 

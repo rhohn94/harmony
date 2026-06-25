@@ -13,15 +13,15 @@ gate: scope lock, batch spawn, each merge, and push to origin.
 
 ## Scope under a Project Manager (v3.1)
 
-When a **Project Manager** (PM) owns the release (a `project-manager` config
+When a **Project Manager** (PM) owns the release (a `grm-project-manager` config
 block is present and a PM is engaged), the integration master is **narrowed to
 one feature lane**: it implements the lane's feature(s) — plans the lane's
 items, spawns task agents, merges their branches into its **lane branch**
 `version/{X.Y}/<lane>` — and reports lane status up to the PM. In that mode the
 PM, not the master, owns release planning/agreement, lane integration, the QA
-gate, `project-release`, and the push.
+gate, `grm-project-release`, and the push.
 
-Absent a PM (no `project-manager` block, or a single-feature release), the
+Absent a PM (no `grm-project-manager` block, or a single-feature release), the
 master is unchanged: it remains the top-level orchestrator and runs the whole
 pipeline below exactly as documented (the degenerate one-lane case). The PM
 layer is additive — it does not remove the standalone master path. See
@@ -36,7 +36,7 @@ layer is additive — it does not remove the standalone master path. See
   `main`. Work-item agents never merge.
 - The master operates the **marker-blessed worktree** (carries
   `.claude/integration-allow.local`).
-- For the full six-step map, see `docs/integration-workflow.md`.
+- For the full six-step map, see `docs/grimoire/integration-workflow.md`.
 
 ---
 
@@ -44,8 +44,8 @@ layer is additive — it does not remove the standalone master path. See
 
 | Gate | What happens |
 |------|-------------|
-| **Scope lock** | Present the work-items report; wait for explicit "agree" / "lock" before calling `release-agreement`. |
-| **Batch spawn** | List the items to be spawned; ask "Spawn now?" before calling `release-phase`. |
+| **Scope lock** | Present the work-items report; wait for explicit "agree" / "lock" before calling `grm-release-agreement`. |
+| **Batch spawn** | List the items to be spawned; ask "Spawn now?" before calling `grm-release-phase`. |
 | **Per-merge** | Summarise the diff; ask "Merge?" before each `git merge --no-ff`. |
 | **Push to origin** | Propose the exact refs; wait for explicit "push" confirmation before `git push`. |
 | **Staging branch delete** | Name the branch; ask "Delete `version/{X.Y}`?" — destructive op. |
@@ -57,18 +57,18 @@ immediately pending gate only — ask again at the next one.
 
 ## Skills in order
 
-1. `release-planning` — produce the work-items report.
-2. `release-agreement` — lock scope after user approval.
-3. `release-phase` — spawn batch after user approval.
-4. `release-agent-tracker` — reconcile §5 ledger with live branches.
-5. `release-phase-merge` — merge each completed branch; ask before each.
-6. `project-release` — promote `dev` → `main` and tag.
+1. `grm-release-planning` — produce the work-items report.
+2. `grm-release-agreement` — lock scope after user approval.
+3. `grm-release-phase` — spawn batch after user approval.
+4. `grm-release-agent-tracker` — reconcile §5 ledger with live branches.
+5. `grm-release-phase-merge` — merge each completed branch; ask before each.
+6. `grm-project-release` — promote `dev` → `main` and tag.
 
 > **Before-promotion divergence gate (BMI-2, v3.38, #126).** Before both
 > promotion boundaries (`version/{X.Y}→dev` and the `dev→main` promotion at
-> `project-release`), run the model-aware divergence check (`merge_preflight`
+> `grm-project-release`), run the model-aware divergence check (`merge_preflight`
 > runs it automatically; CLI fallback `python3
-> .claude/skills/release-agent-tracker/release_plan.py divergence-check`). It
+> .claude/skills/grm-release-agent-tracker/release_plan.py divergence-check`). It
 > HALTs iff `main` carries tree content not reachable from the integration line
 > and does **not** false-positive when `main` is ahead only by promotion merges.
 > On a HALT, stop and reconcile by merging `main` INTO the integration line
@@ -81,7 +81,7 @@ immediately pending gate only — ask again at the next one.
 ## Subagent delegation
 
 Spawn `Agent` subagents for mechanical / read-only work (log extraction, diff
-summaries). Match model/effort per `repo-reference`. Reserve `opus`/high for
+summaries). Match model/effort per `grm-repo-reference`. Reserve `opus`/high for
 review and integration judgement. Subagents run inside this session — they do
 not carry the integration marker and cannot merge.
 
@@ -90,9 +90,9 @@ not carry the integration marker and cannot merge.
 ## Pushing to origin
 
 Once per release, at a single trigger moment (see
-`docs/integration-workflow.md` §Pushing to origin): after `dev` → `main` +
-release tag (end of `project-release`), push `dev`, `main`, and the version
-tag **together**. `release-phase-merge` no longer pushes — `dev` stays local
+`docs/grimoire/integration-workflow.md` §Pushing to origin): after `dev` → `main` +
+release tag (end of `grm-project-release`), push `dev`, `main`, and the version
+tag **together**. `grm-release-phase-merge` no longer pushes — `dev` stays local
 through integration. Always propose the push and receive explicit user
 confirmation before running `git push`.
 
@@ -104,7 +104,7 @@ confirmation before running `git push`.
 - Spawning a batch without asking first.
 - Auto-merging: every `git merge --no-ff` needs a "Merge?" confirmation.
 - Pushing without the user's explicit "push" instruction.
-- Running `project-release` without user sign-off on the `dev` state.
+- Running `grm-project-release` without user sign-off on the `dev` state.
 
 ## Context efficiency (v1.29)
 
@@ -119,14 +119,14 @@ Cost levers for long autonomous campaigns. Authority:
 - **Shared-context dispatch (#59).** When fanning out N agents, hoist the common
   context (design doc, standards, acceptance criteria) into one compact **shared
   brief** and send each agent only its **per-item delta** — not the whole context
-  per agent. See `release-phase`.
+  per agent. See `grm-release-phase`.
 - **Per-release baseline (#58).** At closeout, capture/compare the token baseline
-  via `token-measure` (`.claude/cache/token-baseline.json`); flag output-token
+  via `grm-token-measure` (`.claude/cache/token-baseline.json`); flag output-token
   regressions beyond threshold (informational).
 
 ## Autonomy hardening (v1.30)
 
-Authority: `docs/design/autonomy-hardening-design.md`.
+Authority: `docs/grimoire/design/autonomy-hardening-design.md`.
 
 - **Unattended dispatch (#60).** `spawn_task` chips need a human click, so for
   genuine **unattended** Noir dispatch use the write-capable workflow / the

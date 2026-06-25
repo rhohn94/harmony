@@ -30,7 +30,7 @@ via the isolated-worktree subagent flow below (`Agent` with
 fall back to `Default` and log the downgrade), dispatch the phase's items
 instead via a **write-capable Workflow**, whose isolated-worktree agents each
 implement one item and return a branch; the returned branches are then merged
-in `mergeAfter` order by `release-phase-merge`. `Auto` reuses the existing
+in `mergeAfter` order by `grm-release-phase-merge`. `Auto` reuses the existing
 write-capable tier — no new machinery — and the execution variant still comes
 from `workflow-variant`. See the integration-master §Write-capable Workflow
 integration / §`release-phase-model` dial and
@@ -49,7 +49,7 @@ Read §3 (pass structure + conflict map) and §5 (ledger) to determine:
 
 - **Current phase** = the first pass whose rows are all ☐ Implemented.
 - Only spawn the ☐ rows; skip any already ☑.
-- If all passes are ☑, move to `release-phase-merge` for the final
+- If all passes are ☑, move to `grm-release-phase-merge` for the final
   `version/{X.Y}` → `dev` step.
 
 ---
@@ -93,7 +93,7 @@ implements one item, and returns its branch for merge.
   master sizes each subagent; there is no chip for a human to size.
 - **label/description**: `{ITEM-ID}: {short title}`.
 - **prompt**: self-contained task block (same task template as Supervised
-  `release-phase`), built per the §Shared-context dispatch guidance below.
+  `grm-release-phase`), built per the §Shared-context dispatch guidance below.
 
 ---
 

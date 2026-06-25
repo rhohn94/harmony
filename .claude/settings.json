@@ -1,6 +1,12 @@
 {
     "permissions": {
         "allow": [
+            "mcp__grimoire-issue-tracker__create_issue",
+            "mcp__grimoire-issue-tracker__comment_issue",
+            "mcp__grimoire-issue-tracker__update_issue",
+            "mcp__grimoire-issue-tracker__close_issue",
+            "mcp__grimoire-issue-tracker__label_issue",
+            "mcp__grimoire-issue-tracker__ensure_label",
             "Bash(.claude/skills/sync-from-upstream/sync-from-upstream.sh*)",
             "Bash(.claude/skills/grm-sync-from-upstream/sync-from-upstream.sh*)",
             "Write(.scaffold-upstream.conf)"

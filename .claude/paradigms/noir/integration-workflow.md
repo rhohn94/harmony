@@ -31,20 +31,20 @@ the user needs to decide.
 
 ## Pipeline steps
 
-1. **Plan scope** — `release-planning` skill. Read docs, roadmap, carryovers;
+1. **Plan scope** — `grm-release-planning` skill. Read docs, roadmap, carryovers;
    produce the work-items report. Proceed directly to lock.
-2. **Lock scope** — `release-agreement` skill. Lock immediately after
+2. **Lock scope** — `grm-release-agreement` skill. Lock immediately after
    planning; create `version/{X.Y}` off `dev`.
-3. **Distribute work** — `release-phase` skill. Apply §3 conflict map; dispatch
+3. **Distribute work** — `grm-release-phase` skill. Apply §3 conflict map; dispatch
    the full current batch at once via isolated-worktree subagents (`Agent` with
    `isolation:"worktree"`, or a write-capable Workflow) — chip-free, no
    `spawn_task`. No per-item confirmation.
-4. **Track** — `release-agent-tracker` skill. Poll for ☑ Implemented
+4. **Track** — `grm-release-agent-tracker` skill. Poll for ☑ Implemented
    branches. Proceed to merge as each batch completes.
-5. **Integrate** — `release-phase-merge` skill. Merge each completed branch
+5. **Integrate** — `grm-release-phase-merge` skill. Merge each completed branch
    autonomously: review diff, merge, test, tick §5, advance. Pause only on
    conflict/test-failure stop conditions or the push trigger.
-6. **Release** — `project-release` skill. Promote `dev` → `main` and tag.
+6. **Release** — `grm-project-release` skill. Promote `dev` → `main` and tag.
    Propose push; wait for human instruction.
 
 The integration master is the **only** role that merges into
@@ -59,8 +59,8 @@ repeated **iterations** while keeping the orchestrating session's context flat.
 Each iteration is delegated to a fresh subagent so the orchestrator accumulates
 only a tiny summary per cycle. Full design:
 `docs/design/noir-iterative-loop-design.md`; role:
-`docs/design/agent-roles-design.md` §B.12 (`release-master`); helper:
-`.claude/skills/noir-loop/`.
+`docs/grimoire/design/agent-roles-design.md` §B.12 (`release-master`); helper:
+`.claude/skills/grm-noir-loop/`.
 
 **The loop, per `/loop` firing.** Claude Code's `/loop` keeps the same
 orchestrator session alive across firings (fixed-interval or self-paced
@@ -84,8 +84,8 @@ truncated, so each subagent reads it near-clean). The release-master
 `--read`s it at the start of its iteration and `--advance`s it at the end:
 
 ```
-python3 .claude/skills/noir-loop/noir_loop_state.py --read     # iteration start
-python3 .claude/skills/noir-loop/noir_loop_state.py --advance --summary "…" --open "…" --next "…"  # iteration end
+python3 .claude/skills/grm-noir-loop/noir_loop_state.py --read     # iteration start
+python3 .claude/skills/grm-noir-loop/noir_loop_state.py --advance --summary "…" --open "…" --next "…"  # iteration end
 ```
 
 **No `/clear` / `/compact`.** Do **not** rely on `/clear` between iterations — it
@@ -97,11 +97,11 @@ by an agent anyway. The subagent + state-file pattern is what keeps context flat
 next firing happens (the §"Pushing to origin" gate and the #13 cadence are
 unchanged); the loop decides *what* a firing does — spawn the next release-master,
 which reads the state file for its starting point. It also stays within the token
-budget (#28): bounded per-iteration cost, observable via `cost-budget`.
+budget (#28): bounded per-iteration cost, observable via `grm-cost-budget`.
 
 **Noir only.** Supervised / Weiss run releases in-session via the integration
 master and do not use this loop. **Push to origin stays human-gated** — the loop
-never pushes; the release-master proposes the push at `project-release` and waits.
+never pushes; the release-master proposes the push at `grm-project-release` and waits.
 
 ---
 
@@ -125,9 +125,9 @@ the published line (`main`) **only** by promotion from the integration line.
 **No commit is ever authored directly on `main` out-of-band.** This is a
 **hard rule, not a convention**. It applies to both supported branch models:
 
-- **Default / dogfood model** (this repo's model): `dev` is the integration
+- **Default model**: `dev` is the integration
   line; `main` is the downstream published line. Promotion = `git merge --no-ff
-  dev → main` via the `project-release` skill only. Nothing is authored on
+  dev → main` via the `grm-project-release` skill only. Nothing is authored on
   `main` directly — not manual releases, not scaffolding syncs, not
   unreconciled hotfixes. Any such change must land on `dev` and reach `main`
   by promotion.
@@ -137,7 +137,7 @@ the published line (`main`) **only** by promotion from the integration line.
   (`git switch -c <integration> main`) and promotes back to `main` at release.
   The same rule applies: nothing lands on `main` out-of-band between
   iterations. Any out-of-band `main` commit breaks the ancestor relationship
-  the next re-branch relies on and is exactly the fork that issue #126 hit.
+  the next re-branch relies on.
 
 BMI-4 (`protected-branch-guard.sh`) enforces this at commit time; BMI-3 enforces
 it for sync skills. When a fork has already happened, see §Recovering from an
@@ -149,7 +149,7 @@ integration-branch fork (merge-forward) below — that is the only safe path.
 
 Spawn `Agent` subagents for mechanical / read-only work autonomously.
 Reserve `opus`/high for review and integration judgement per the
-`repo-reference` table.
+`grm-repo-reference` table.
 
 ## Workflow-based orchestration
 
@@ -166,9 +166,9 @@ Run the dead-worktree check and removal autonomously after each merge step
 full procedure). Stop and surface if a worktree is not clean.
 
 **Post-release cleanup step.** Cleanup is also a named, ordered release step,
-run once after `project-release` tags the version and the human-gated push
-completes (`project-release` §Post-release cleanup drives it;
-`release-phase-merge` cross-references it). Only the **marker-blessed master**
+run once after `grm-project-release` tags the version and the human-gated push
+completes (`grm-project-release` §Post-release cleanup drives it;
+`grm-release-phase-merge` cross-references it). Only the **marker-blessed master**
 may run it — per the cross-worktree branch hijack rule (§Enforcement). For each
 work-item branch/worktree: verify merged + clean, **preserve or report** any
 uncommitted work (never silent `--force`), `unlock` then `git worktree remove`,
@@ -219,7 +219,7 @@ Subsequent merges/commits piled onto the stray branch, so `version/{X.Y}` (or
 `dev`/`main`) never advanced and a release shipped empty or partial. This is the
 v1.15 incident; the fix work is `docs/design/dispatch-hardening-design.md`.
 
-**Detection.** The HEAD-verification gate (`release-phase-merge` §Before every
+**Detection.** The HEAD-verification gate (`grm-release-phase-merge` §Before every
 merge run) and the `protected-branch-guard.sh` HEAD-drift block both fire when
 the master is off-staging. Confirm with `git symbolic-ref --short HEAD` and
 `git log --oneline version/{X.Y}..<stray-branch>` (the stranded commits).
@@ -236,7 +236,7 @@ user confirmation — they are destructive):**
 4. **If a bad release already promoted/tagged** an empty `dev`/`main`: rewind
    the affected refs to their pre-release tips (`git reset --hard <good-sha>`,
    per-action confirmation), delete the premature tag (`git tag -d <X.Y>`), then
-   redo `release-phase-merge` (`version/{X.Y}` → `dev`) and `project-release`
+   redo `grm-release-phase-merge` (`version/{X.Y}` → `dev`) and `grm-project-release`
    (`dev` → `main`, re-tag) cleanly.
 5. **Re-verify** the staging/dev/main tips carry the expected commits before any
    push. Push only at the normal human-gated post-release moment.
@@ -254,7 +254,7 @@ run). This section addresses a **structural fork** — where `main` and the
 integration line have diverged because real work was authored on `main`
 out-of-band and the integration line continued forward without it. The result:
 `git merge-base main <integration>` returns a stale ancestor, and the two
-lines carry disjoint commits. Issue #126 is the canonical example.
+lines carry disjoint commits. This is the canonical fork-recovery case.
 
 **Detection.** BMI-2's divergence predicate fires before promotion:
 `git diff --quiet <integration> main` exits 1 (trees differ) and at least one
@@ -298,20 +298,17 @@ line**. This is data loss, not a fix. *(A `reset --hard` on a protected branch
 is also independently blocked by `protected-branch-guard.sh` (#84) — but the
 operative lesson here is: never reset across a fork, on any branch.)*
 
-**Worked example — v8.40 feed-engine carve-out near-miss (#126).** The
-`experimental`↔`main` fork held an entire shipped release (the v8.40
-feed-engine crate carve-out, #19) **only on `main`**, plus a 660-file
-Grimoire+Aura sync (`24c73dd`) — seven commits total. The integration line
-(`experimental`) had spent nine autonomous releases editing the inline engine
-while `main` had extracted it to a standalone crate. The naive "just unblock it"
-move — `git reset --hard main` onto the integration tip (or vice-versa) — would
-have **silently discarded those seven main-only commits, including the entire
-v8.40 release, with no trace**. The destructive-op confirmation gate caught it
-in #126; absent that gate, a shipped release would have vanished. The correct
-recovery was merge-forward: `git merge --no-ff main` into `experimental`, resolve
-the 18 conflicts (including the inline-vs-extracted ranking engine — a semantic
-decision a human/master makes) on the integration line, and promote the
-reconciled result. See `docs/design/integration-branch-integrity-design.md` §5.
+**Worked example.** Consider an integration line that diverged from `main`
+when an entire shipped release plus a large dependency sync — several commits —
+were authored **only on `main`** out-of-band, while the integration line kept
+moving forward independently. The naive "just unblock it" move —
+`git reset --hard main` onto the integration tip (or vice-versa) — would
+**silently discard every commit unique to the losing line, including the entire
+shipped release, with no trace**. The destructive-op confirmation gate is what
+stops this; absent that gate, a shipped release would vanish. The correct
+recovery is merge-forward: `git merge --no-ff main` into the integration line,
+resolve the conflicts (including any semantic decision a human/master must make)
+on the integration line, and promote the reconciled result.
 
 **Under Noir autonomy**, the master never resolves a fork without surfacing to
 the user first — a structural fork is one of the explicit stop conditions (merge
@@ -332,24 +329,24 @@ under a PM, also lane `version/{X.Y}/<lane>` -> `version/{X.Y}`):
 1. **Push the head branch** — a push-class action: propose-and-wait (human-gated)
    unless `autonomous-push.enabled`. `push-guard.sh` permits the `version/*` head
    **only because** `github-pr.enabled`; marker + destructive-flag rules unchanged.
-2. **Open the PR** (idempotent): `github-pr` skill /
-   `python3 .claude/skills/github-pr/github_pr.py open --base <B> --head <H> --plan <plan>`.
+2. **Open the PR** (idempotent): `grm-github-pr` skill /
+   `python3 .claude/skills/grm-github-pr/github_pr.py open --base <B> --head <H> --plan <plan>`.
    On `degraded` (no `gh` / remote), fall back to the local merge and log it.
 3. **Dispatch a Reviewer in PR mode** (if `review.auto-dispatch`): it reads the
    PR diff, runs `code-review`, and posts findings per `review.post-comments`
-   (`off` / `comment` / `request-changes`). See the `reviewer` skill §2.5.
+   (`off` / `comment` / `request-changes`). See the `grm-reviewer` skill §2.5.
 4. **Merge via the PR**: `github_pr.py merge --pr N --method <merge-method>` —
    **skip the local `--no-ff` merge at this boundary**. Do not merge while
    `reviewDecision == CHANGES_REQUESTED`. Boundaries not in `boundary` merge
    locally as today.
 
-`github-pr` does **not** imply autonomous push — open/merge stay governed by the
+`grm-github-pr` does **not** imply autonomous push — open/merge stay governed by the
 existing push gate. Full design: `docs/design/github-pr-integration-design.md`.
 
 ## Pushing to origin
 
 **Human-gated by default.** A single trigger moment, once per release: after
-`project-release` promotes `dev` → `main` and tags, propose pushing `dev`,
+`grm-project-release` promotes `dev` → `main` and tags, propose pushing `dev`,
 `main`, and the version tag **together** and wait for explicit user
 instruction. The earlier `version/{X.Y}` → `dev` integration no longer prompts
 a push (`dev` stays local until release).
@@ -361,8 +358,8 @@ without waiting — the `push-guard.sh` mechanical rails still apply
 (blessed-worktree marker required; only allowlisted refs — `dev`, `main`, and
 the version tag; destructive flags always denied). With the flag absent or
 `false`, behaviour is unchanged: propose and wait. See
-`.claude/skills/integration-master/SKILL.md` (§top) and
-`docs/design/autonomy-scheduling-design.md` §2.
+`.claude/skills/grm-integration-master/SKILL.md` (§top) and
+`docs/grimoire/design/autonomy-scheduling-design.md` §2.
 
 Destructive flags (`--force`, `--all`, etc.) are always denied.
 
@@ -373,17 +370,17 @@ Release from the version tag, carrying the `version-history` notes and the
 **per-flavor `.zip` distributables** — `dist/grimoire-<flavor>-v{X.Y}.zip`, one per
 `.grimoire-flavor` directory, built deterministically by
 `project-release/build_distributables.py` and attached to the Release. The
-Release is the **authoritative artifact** downstream `sync-from-upstream` consumes
+Release is the **authoritative artifact** downstream `grm-sync-from-upstream` consumes
 (`UPSTREAM_TRANSPORT=release` downloads the flavor's zip). No longer optional — it
 degrades only when `gh` is unavailable, and then **loudly**. Full procedure:
-`project-release` §GitHub Release. Design:
+`grm-project-release` §GitHub Release. Design:
 `docs/design/release-distribution-design.md`.
 
 ## Lane model & multiple marked lane worktrees (v3.1)
 
 When a **Project Manager** owns a multi-feature release (see
 `docs/design/project-manager-role-design.md` and
-`.claude/skills/project-manager/SKILL.md`), the single `version/{X.Y}` staging
+`.claude/skills/grm-project-manager/SKILL.md`), the single `version/{X.Y}` staging
 line is split into **parallel lanes**, each implemented by its own integration
 master:
 
@@ -392,7 +389,7 @@ master:
   overlap analysis — `pm_overlap.py`). The `version/.*` shape keeps lane branches
   inside the protected set, so the existing guards cover them unchanged.
 - **One integration master per lane**, each in its own marker-blessed worktree,
-  merging its task agents' branches into its lane branch via `release-phase-merge`
+  merging its task agents' branches into its lane branch via `grm-release-phase-merge`
   — exactly the single-master flow, scoped to the lane.
 - **Lane integration.** As lanes complete, the PM merges each lane branch into
   `version/{X.Y}`, then promotes `version/{X.Y}` -> `dev` -> `main`. Lanes are
@@ -478,7 +475,7 @@ The script checks the active paradigm at runtime and fails closed if not Noir.
 Each write-capable Workflow agent receives an isolated worktree and commits
 on a per-agent branch (`<item-slug>-<short-uuid>`). The master collects the
 branch list from the Workflow's structured output and merges via
-`release-phase-merge` in `mergeAfter` dependency order.
+`grm-release-phase-merge` in `mergeAfter` dependency order.
 
 **Three execution variants** (default: `Efficient`):
 
@@ -493,4 +490,4 @@ branch list from the Workflow's structured output and merges via
 **push to origin remains human-gated even in Noir** (applies to all agents
 and the master). Guard hooks enforce all of these mechanically.
 
-Full design: `docs/design/write-capable-workflow-design.md`.
+Full design: `docs/grimoire/design/write-capable-workflow-design.md`.

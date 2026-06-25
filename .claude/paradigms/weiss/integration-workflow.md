@@ -10,24 +10,24 @@ doc; their guide is `CLAUDE.md`.
 Each step's authoritative procedure lives in the named skill; this doc is the
 map between them.
 
-1. **Plan scope** — `release-planning` skill. Read docs, roadmap, carryovers.
+1. **Plan scope** — `grm-release-planning` skill. Read docs, roadmap, carryovers.
    Present a draft work-items report **with open design questions highlighted**.
    Do not lock anything until the user has resolved each question.
-2. **Lock scope** — `release-agreement` skill. Present the report to the user;
+2. **Lock scope** — `grm-release-agreement` skill. Present the report to the user;
    walk through each open item; wait for the user to say "agree" or "lock" for
    each. Only then freeze into `docs/release-planning-v{X.Y}.md` and create
    the `version/{X.Y}` integration branch.
-3. **Distribute work** — `release-phase` skill. Present the dependency graph
+3. **Distribute work** — `grm-release-phase` skill. Present the dependency graph
    and model assignments. **Spawn one item at a time** — each with an explicit
    "Spawn `{ITEM-ID}`?" confirmation before calling `spawn_task`. Let the user
    pace the spawning.
-4. **Track** — `release-agent-tracker` skill. Reconcile §5 ledger with live
+4. **Track** — `grm-release-agent-tracker` skill. Reconcile §5 ledger with live
    branches. Present the ready-to-merge list to the user; ask which to merge
    first.
-5. **Integrate** — `release-phase-merge` skill. For each branch: show the diff
+5. **Integrate** — `grm-release-phase-merge` skill. For each branch: show the diff
    summary, ask "Merge `{branch}`?", wait for confirmation, merge, report test
    result. Repeat per branch.
-6. **Release** — `project-release` skill. Present the pre-release checklist;
+6. **Release** — `grm-project-release` skill. Present the pre-release checklist;
    wait for the user to say "release." Promotes `dev` → `main` and tags.
 
 The integration master is the **only** role that merges into
@@ -50,9 +50,9 @@ the published line (`main`) **only** by promotion from the integration line.
 **No commit is ever authored directly on `main` out-of-band.** This is a
 **hard rule, not a convention**. It applies to both supported branch models:
 
-- **Default / dogfood model** (this repo's model): `dev` is the integration
+- **Default model**: `dev` is the integration
   line; `main` is the downstream published line. Promotion = `git merge --no-ff
-  dev → main` via the `project-release` skill only. Nothing is authored on
+  dev → main` via the `grm-project-release` skill only. Nothing is authored on
   `main` directly — not manual releases, not scaffolding syncs, not
   unreconciled hotfixes. Any such change must land on `dev` and reach `main`
   by promotion.
@@ -62,7 +62,7 @@ the published line (`main`) **only** by promotion from the integration line.
   (`git switch -c <integration> main`) and promotes back to `main` at release.
   The same rule applies: nothing lands on `main` out-of-band between
   iterations. Any out-of-band `main` commit breaks the ancestor relationship
-  the next re-branch relies on and is exactly the fork that issue #126 hit.
+  the next re-branch relies on.
 
 BMI-4 (`protected-branch-guard.sh`) enforces this at commit time; BMI-3 enforces
 it for sync skills. When a fork has already happened, see §Recovering from an
@@ -98,7 +98,7 @@ file-writing or branch-creating next step.
 **Write-capable workflows are Noir-only.** In Weiss the read-only convention
 is enforced; write-capable workflows (`meta.tier = 'write-capable'`) require
 the Noir paradigm and will fail closed if invoked here. See
-`docs/design/write-capable-workflow-design.md`.
+`docs/grimoire/design/write-capable-workflow-design.md`.
 
 ## Dead-worktree cleanup
 
@@ -107,8 +107,8 @@ cleanup for the full procedure). Always report what you find and ask before
 removing any worktree, even a clean one.
 
 **Post-release cleanup step.** Cleanup is also a named, ordered release step,
-run once after `project-release` tags the version and the push completes
-(`project-release` §Post-release cleanup drives it; `release-phase-merge`
+run once after `grm-project-release` tags the version and the push completes
+(`grm-project-release` §Post-release cleanup drives it; `grm-release-phase-merge`
 cross-references it). Only the **marker-blessed master** may run it. For each
 work-item branch/worktree: verify merged + clean, **preserve or report** any
 uncommitted work (never silent `--force`), `unlock` then `git worktree remove`,
@@ -129,23 +129,23 @@ under a PM, also lane `version/{X.Y}/<lane>` -> `version/{X.Y}`):
 1. **Push the head branch** — a push-class action: propose-and-wait (human-gated)
    unless `autonomous-push.enabled`. `push-guard.sh` permits the `version/*` head
    **only because** `github-pr.enabled`; marker + destructive-flag rules unchanged.
-2. **Open the PR** (idempotent): `github-pr` skill /
-   `python3 .claude/skills/github-pr/github_pr.py open --base <B> --head <H> --plan <plan>`.
+2. **Open the PR** (idempotent): `grm-github-pr` skill /
+   `python3 .claude/skills/grm-github-pr/github_pr.py open --base <B> --head <H> --plan <plan>`.
    On `degraded` (no `gh` / remote), fall back to the local merge and log it.
 3. **Dispatch a Reviewer in PR mode** (if `review.auto-dispatch`): it reads the
    PR diff, runs `code-review`, and posts findings per `review.post-comments`
-   (`off` / `comment` / `request-changes`). See the `reviewer` skill §2.5.
+   (`off` / `comment` / `request-changes`). See the `grm-reviewer` skill §2.5.
 4. **Merge via the PR**: `github_pr.py merge --pr N --method <merge-method>` —
    **skip the local `--no-ff` merge at this boundary**. Do not merge while
    `reviewDecision == CHANGES_REQUESTED`. Boundaries not in `boundary` merge
    locally as today.
 
-`github-pr` does **not** imply autonomous push — open/merge stay governed by the
+`grm-github-pr` does **not** imply autonomous push — open/merge stay governed by the
 existing push gate. Full design: `docs/design/github-pr-integration-design.md`.
 
 ## Pushing to origin
 
-A single trigger moment, once per release: after `project-release` promotes
+A single trigger moment, once per release: after `grm-project-release` promotes
 `dev` → `main` and tags, propose pushing `dev`, `main`, and the version tag
 **together** and wait for explicit user instruction — never push automatically.
 The earlier `version/{X.Y}` → `dev` integration no longer prompts a push (`dev`
@@ -159,7 +159,7 @@ human run them if genuinely needed.
 
 When a **Project Manager** owns a multi-feature release (see
 `docs/design/project-manager-role-design.md` and
-`.claude/skills/project-manager/SKILL.md`), the single `version/{X.Y}` staging
+`.claude/skills/grm-project-manager/SKILL.md`), the single `version/{X.Y}` staging
 line is split into **parallel lanes**, each implemented by its own integration
 master:
 
@@ -168,7 +168,7 @@ master:
   overlap analysis — `pm_overlap.py`). The `version/.*` shape keeps lane branches
   inside the protected set, so the existing guards cover them unchanged.
 - **One integration master per lane**, each in its own marker-blessed worktree,
-  merging its task agents' branches into its lane branch via `release-phase-merge`
+  merging its task agents' branches into its lane branch via `grm-release-phase-merge`
   — exactly the single-master flow, scoped to the lane.
 - **Lane integration.** As lanes complete, the PM merges each lane branch into
   `version/{X.Y}`, then promotes `version/{X.Y}` -> `dev` -> `main`. Lanes are
@@ -246,7 +246,7 @@ run). This section addresses a **structural fork** — where `main` and the
 integration line have diverged because real work was authored on `main`
 out-of-band and the integration line continued forward without it. The result:
 `git merge-base main <integration>` returns a stale ancestor, and the two
-lines carry disjoint commits. Issue #126 is the canonical example.
+lines carry disjoint commits. This is the canonical fork-recovery case.
 
 **Detection.** BMI-2's divergence predicate fires before promotion:
 `git diff --quiet <integration> main` exits 1 (trees differ) and at least one
@@ -288,17 +288,14 @@ git reset --hard <integration> # FORBIDDEN — silently destroys every main-only
 A reset across a real fork **silently deletes all commits unique to the losing
 line**. This is data loss, not a fix.
 
-**Worked example — v8.40 feed-engine carve-out near-miss (#126).** The
-`experimental`↔`main` fork held an entire shipped release (the v8.40
-feed-engine crate carve-out, #19) **only on `main`**, plus a 660-file
-Grimoire+Aura sync (`24c73dd`) — seven commits total. The integration line
-(`experimental`) had spent nine autonomous releases editing the inline engine
-while `main` had extracted it to a standalone crate. The naive "just unblock it"
-move — `git reset --hard main` onto the integration tip (or vice-versa) — would
-have **silently discarded those seven main-only commits, including the entire
-v8.40 release, with no trace**. The destructive-op confirmation gate caught it
-in #126; absent that gate, a shipped release would have vanished. The correct
-recovery was merge-forward: `git merge --no-ff main` into `experimental`, resolve
-the 18 conflicts (including the inline-vs-extracted ranking engine — a semantic
-decision a human/master makes) on the integration line, and promote the
-reconciled result. See `docs/design/integration-branch-integrity-design.md` §5.
+**Worked example.** Consider an integration line that diverged from `main`
+when an entire shipped release plus a large dependency sync — several commits —
+were authored **only on `main`** out-of-band, while the integration line kept
+moving forward independently. The naive "just unblock it" move —
+`git reset --hard main` onto the integration tip (or vice-versa) — would
+**silently discard every commit unique to the losing line, including the entire
+shipped release, with no trace**. The destructive-op confirmation gate is what
+stops this; absent that gate, a shipped release would vanish. The correct
+recovery is merge-forward: `git merge --no-ff main` into the integration line,
+resolve the conflicts (including any semantic decision a human/master must make)
+on the integration line, and promote the reconciled result.

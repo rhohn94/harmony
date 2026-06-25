@@ -1,7 +1,7 @@
 export const meta = {
   name: 'release-planning',
-  description: 'Fan-out version of the release-planning skill: parallel source readers + per-item token sizing → a work-items report draft for the next release.',
-  whenToUse: 'When planning the next release (vX.Y) and you want broad, parallel coverage of roadmap + carryovers + design docs and an independently-sized item list, rather than one context reading everything serially. Produces the same report shape as the release-planning skill; still a planning input, not a committed plan.',
+  description: 'Fan-out version of the grm-release-planning skill: parallel source readers + per-item token sizing → a work-items report draft for the next release.',
+  whenToUse: 'When planning the next release (vX.Y) and you want broad, parallel coverage of roadmap + carryovers + design docs and an independently-sized item list, rather than one context reading everything serially. Produces the same report shape as the grm-release-planning skill; still a planning input, not a committed plan.',
   phases: [
     { title: 'Orient', detail: 'one haiku agent: resolve released/in-flight/target versions AND read version-history once for velocity', model: 'haiku' },
     { title: 'Gather', detail: 'parallel readers (all haiku): roadmap, carryovers, design docs, Grimoire-Requirement tracker issues', model: 'haiku' },
@@ -11,7 +11,7 @@ export const meta = {
 }
 
 // ---------------------------------------------------------------------------
-// This workflow mirrors .claude/skills/release-planning/SKILL.md. The skill is
+// This workflow mirrors .claude/skills/grm-release-planning/SKILL.md. The skill is
 // the authoritative description of WHAT a release plan must contain; this
 // script is one mechanised WAY to produce the report's first draft by fanning
 // the read-heavy steps across subagents. It is read-only: it writes no files
@@ -49,7 +49,7 @@ export const meta = {
 // output emitter — was tiered Opus→sonnet (mechanical template-fill of already-
 // structured JSON, no judgement) and told not to echo its input JSON. Output is
 // the most expensive token class and worst on Opus; the synthesizer is exactly
-// the "tier-down an output-heavy step" case. See docs/token-efficiency-baseline.md
+// the "tier-down an output-heavy step" case. See docs/grimoire/token-efficiency-baseline.md
 // (the orchestrator/synthesis path was the costliest single operation measured).
 //
 // Invoke:  Workflow({ name: 'release-planning' })
@@ -303,7 +303,7 @@ const [roadmap, carry, design, grimreq] = await parallel([
     ),
   () =>
     agent(
-      `Run the following command and return its output as a list of issues: \`python3 .claude/skills/issue-tracker/issue_tracker.py list --state open --labels Grimoire-Requirement\`. A zero result ("(no issues)") is valid — return an empty issues array. These are framework-required tracker issues (origin-D) and are never optional context.`,
+      `Run the following command and return its output as a list of issues: \`python3 .claude/skills/grm-issue-tracker/issue_tracker.py list --state open --labels Grimoire-Requirement\`. A zero result ("(no issues)") is valid — return an empty issues array. These are framework-required tracker issues (origin-D) and are never optional context.`,
       { label: 'read:grimoire-requirement', model: 'haiku', phase: 'Gather', schema: GRIMOIRE_REQUIREMENT_SCHEMA },
     ),
 ])
