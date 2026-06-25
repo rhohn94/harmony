@@ -35,6 +35,16 @@
       "description": "W18 visual-inspection CLI (gui-visual-inspection-cli): render the built web UI headlessly and capture a PNG screenshot + DOM dump to artifacts/visual-inspection/. Run `pnpm build` first; falls back to a static DOM dump if no headless browser is available, still producing an artifact and exiting 0.",
       "command": "pnpm build && node scripts/visual-inspect.mjs",
       "implemented": true
+    },
+    "sync-deps": {
+      "description": "Resolve and vendor Grimoire-channel dependencies declared in vendor.toml (dependency-channel feature). Verifies SHA256 before placement, writes vendor.lock.",
+      "command": "python3 .claude/skills/grm-sync-deps/sync_deps.py",
+      "implemented": false
+    },
+    "vendor-check": {
+      "description": "Offline conformance check: recomputes tree_sha256 for each vendored dep and compares to vendor.lock. Warn-only gate (exits 0 but prints findings).",
+      "command": "python3 .claude/skills/grm-sync-deps/sync_deps.py --check",
+      "implemented": false
     }
   }
 }
