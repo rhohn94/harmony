@@ -24,6 +24,15 @@ rewrite tiers (see the design doc, grm-namespacing-design.md):
 Directory renames preserve git history via `git mv` (falling back to os.rename
 when the path is untracked / not in a repo).
 
+Post-sync collision handling: a consumer that ran `grm-sync-from-upstream`
+already received the new `grm-<name>/` skill (added non-destructively by the
+file-walk) while the old bare-named `<name>/` still sits beside it. In that
+state the synced `grm-<name>/` is authoritative, so this transformer ARCHIVES
+the stale bare-named dir to `.grimoire-archive/grm-namespacing-<ts>/` and then
+REMOVES it — it never `git mv`s onto the existing dir (which would nest it as
+`grm-<name>/<name>/`). This is what completes the cutover for an already-synced
+project.
+
 Usage:
     python3 grm_namespacing.py --root <repo-root> [--apply] [--dry-run]
     python3 grm_namespacing.py --self-test
@@ -36,10 +45,12 @@ from __future__ import annotations
 import argparse
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Iterable
 
@@ -59,11 +70,15 @@ class TransformReport:
     """Accumulates what the transformer did (or would do in dry-run)."""
 
     dirs_renamed: list[tuple[str, str]] = field(default_factory=list)
+    # Stale bare-named dirs archived+removed because grm-<name>/ already existed
+    # (the post-sync collision case): (old_rel, existing_grm_rel).
+    dirs_removed: list[tuple[str, str]] = field(default_factory=list)
     frontmatter_updated: list[str] = field(default_factory=list)
     files_rewritten: dict[str, int] = field(default_factory=dict)  # path -> edit count
 
     def merge(self, other: "TransformReport") -> None:
         self.dirs_renamed.extend(other.dirs_renamed)
+        self.dirs_removed.extend(other.dirs_removed)
         self.frontmatter_updated.extend(other.frontmatter_updated)
         for k, v in other.files_rewritten.items():
             self.files_rewritten[k] = self.files_rewritten.get(k, 0) + v
@@ -71,6 +86,7 @@ class TransformReport:
     def summary(self) -> str:
         return (
             f"dirs_renamed={len(self.dirs_renamed)} "
+            f"dirs_removed={len(self.dirs_removed)} "
             f"frontmatter_updated={len(self.frontmatter_updated)} "
             f"files_rewritten={len(self.files_rewritten)} "
             f"total_edits={sum(self.files_rewritten.values())}"
@@ -90,6 +106,10 @@ class GrmNamespacer:
         self.apply = apply
         self.names: list[str] = []
         self.report = TransformReport()
+        # One archive root per run; created lazily on first archived dir.
+        self.archive_root = (
+            self.root / ".grimoire-archive" / f"grm-namespacing-{datetime.now():%Y%m%d-%H%M%S}"
+        )
 
     # -- discovery ---------------------------------------------------------
 
@@ -141,6 +161,30 @@ class GrmNamespacer:
             # Untracked path or no git — plain rename; git detects on add.
             os.rename(src, dst)
 
+    def _archive_dir(self, src: Path) -> None:
+        """Copy src into this run's archive root, preserving its repo-relative
+        path, so a removed original stays recoverable. No-op in dry-run."""
+        if not self.apply:
+            return
+        dest = self.archive_root / src.relative_to(self.root)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(src, dest)
+
+    def _git_rm(self, path: Path) -> None:
+        """Remove a directory, preferring `git rm` so the deletion is staged."""
+        if not self.apply:
+            return
+        try:
+            subprocess.run(
+                ["git", "-C", str(self.root), "rm", "-r", "-q", "--", str(path)],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            # Untracked path or no git — plain recursive delete.
+            shutil.rmtree(path)
+
     def rename_dirs(self) -> None:
         # Deepest-first: a `skills/` parent may be NESTED under another skill
         # dir (e.g. workflow-bootstrap/golden/skills lives under the
@@ -165,10 +209,19 @@ class GrmNamespacer:
                 if child.name not in self.names:
                     continue
                 dst = parent / (PREFIX + child.name)
-                self.report.dirs_renamed.append(
-                    (str(child.relative_to(self.root)), str(dst.relative_to(self.root)))
-                )
-                self._git_mv(child, dst)
+                src_rel = str(child.relative_to(self.root))
+                dst_rel = str(dst.relative_to(self.root))
+                if dst.exists():
+                    # Post-sync collision: the grm-<name>/ skill is already
+                    # installed and authoritative. Archive the stale bare-named
+                    # duplicate and remove it — a blind `git mv` here would nest
+                    # it as grm-<name>/<name>/ (exit 0, silently wrong).
+                    self._archive_dir(child)
+                    self._git_rm(child)
+                    self.report.dirs_removed.append((src_rel, dst_rel))
+                else:
+                    self._git_mv(child, dst)
+                    self.report.dirs_renamed.append((src_rel, dst_rel))
 
     # -- frontmatter -------------------------------------------------------
 
@@ -282,6 +335,16 @@ def _self_test() -> int:
         (root / ".claude" / "skills" / "doc-assurance" / "SKILL.md").write_text(
             "---\nname: doc-assurance\n---\n", encoding="utf-8"
         )
+        # Post-sync COLLISION: a sync already added grm-iterate/ (authoritative,
+        # NEW content) while the stale bare-named iterate/ (OLD content) remains.
+        (root / ".claude" / "skills" / "iterate").mkdir(parents=True)
+        (root / ".claude" / "skills" / "iterate" / "SKILL.md").write_text(
+            "---\nname: iterate\n---\nOLD-stale-content\n", encoding="utf-8"
+        )
+        (root / ".claude" / "skills" / "grm-iterate").mkdir(parents=True)
+        (root / ".claude" / "skills" / "grm-iterate" / "SKILL.md").write_text(
+            "---\nname: grm-iterate\n---\nNEW-synced-content\n", encoding="utf-8"
+        )
         # A referencing doc: a real path, a backticked name, a prose pattern,
         # AND a common-word false-positive ("scout the area" — must NOT rewrite).
         ref = root / "docs" / "guide.md"
@@ -329,10 +392,33 @@ def _self_test() -> int:
         if "iterate on the plan" not in out:
             failures.append("FALSE POSITIVE: bare 'iterate' verb was mangled")
 
-        # 7. idempotency: a second run is a no-op
+        # 7. POST-SYNC COLLISION: stale iterate/ removed (not nested), synced
+        #    grm-iterate/ content preserved, original archived, reported.
+        skills = root / ".claude" / "skills"
+        if (skills / "iterate").exists():
+            failures.append("COLLISION: stale bare-named iterate/ not removed")
+        if (skills / "grm-iterate" / "iterate").exists():
+            failures.append("COLLISION: nested grm-iterate/iterate/ created (the bug)")
+        gi = (skills / "grm-iterate" / "SKILL.md").read_text()
+        if "NEW-synced-content" not in gi:
+            failures.append("COLLISION: synced grm-iterate/ content was clobbered")
+        archived = list(root.glob(".grimoire-archive/*/.claude/skills/iterate/SKILL.md"))
+        if not archived:
+            failures.append("COLLISION: stale iterate/ was not archived")
+        elif "OLD-stale-content" not in archived[0].read_text():
+            failures.append("COLLISION: archive does not hold the original content")
+        if not any(src.endswith("skills/iterate") for src, _ in report.dirs_removed):
+            failures.append("COLLISION: dirs_removed did not record the stale dir")
+
+        # 8. idempotency: a second run is a no-op
         ns2 = GrmNamespacer(root, apply=True)
         rep2 = ns2.run()
-        if rep2.dirs_renamed or rep2.frontmatter_updated or rep2.files_rewritten:
+        if (
+            rep2.dirs_renamed
+            or rep2.dirs_removed
+            or rep2.frontmatter_updated
+            or rep2.files_rewritten
+        ):
             failures.append(f"NOT IDEMPOTENT: second run changed things: {rep2.summary()}")
 
     if failures:
@@ -363,6 +449,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"[{mode}] {report.summary()}")
     for src, dst in report.dirs_renamed:
         print(f"  rename: {src} -> {dst}")
+    for src, dst in report.dirs_removed:
+        print(f"  remove-stale: {src} (kept {dst}; archived)")
     for rel in sorted(report.frontmatter_updated):
         print(f"  frontmatter: {rel}")
     return 0
