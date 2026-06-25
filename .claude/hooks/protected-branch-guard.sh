@@ -71,7 +71,7 @@ automatically, with no additional configuration:
   This binary model (marker = allowed, no marker = denied on protected
   branches) was proven correct by the v1.5 vet (wf_84d9bd9b-704) and is
   the foundation for the v1.6 isolated-worktree parallel execution model.
-  See docs/design/write-capable-workflow-design.md §3 (Safety rails) and
+  See docs/grimoire/design/write-capable-workflow-design.md §3 (Safety rails) and
   §5.3 (Guard model implications).
 
 Cross-worktree branch hijack guard (v1.7, item A3)
@@ -442,7 +442,7 @@ def main() -> None:
                     "  git switch -c <branch> version/<X.Y>\n"
                     "Never `git -C`, `--git-dir`/`--work-tree`, or `cd` into "
                     "another worktree to\nswitch/create a branch there. "
-                    "(See docs/integration-workflow.md, worktree isolation.)\n"
+                    "(See docs/grimoire/integration-workflow.md, worktree isolation.)\n"
                 )
                 sys.exit(2)
     # --------------------------------------------------------------------

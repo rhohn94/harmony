@@ -2,8 +2,8 @@
 """server.py — Grimoire grimoire-release MCP server (second McpServer instance).
 
 Exposes the release-planning ledger engine
-(.claude/skills/release-agent-tracker/release_plan.py) and the noir-loop state
-helper (.claude/skills/noir-loop/noir_loop_state.py) as a small, token-cheap MCP
+(.claude/skills/grm-release-agent-tracker/release_plan.py) and the noir-loop state
+helper (.claude/skills/grm-noir-loop/noir_loop_state.py) as a small, token-cheap MCP
 tool surface, built on the reusable stdlib runtime
 (.claude/mcp-servers/lib/mcp_runtime.py). No third-party dependencies (#75:
 Python 3 stdlib only).

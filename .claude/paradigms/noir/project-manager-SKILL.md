@@ -55,9 +55,9 @@ scope release         (own release-planning + release-agreement)
  └─ official release   (project-release: dev→main + tag) → push (human-gated)
 ```
 
-The PM owns `release-planning`, `release-agreement`, lane integration, the QA
-gate, and `project-release`. Each IM owns `release-phase` /
-`release-phase-merge` **within its lane**.
+The PM owns `grm-release-planning`, `grm-release-agreement`, lane integration, the QA
+gate, and `grm-project-release`. Each IM owns `grm-release-phase` /
+`grm-release-phase-merge` **within its lane**.
 
 ---
 
@@ -74,7 +74,7 @@ will not collide on a shared writable component.
 deterministically:
 
 ```
-python3 .claude/skills/project-manager/pm_overlap.py \
+python3 .claude/skills/grm-project-manager/pm_overlap.py \
     --registry .claude/component-registry.json \
     --features <features.json> \
     --policy balanced --max-parallel 3
@@ -98,7 +98,7 @@ same-lane).
 **Registry-absent fallback.** If the registry is missing/incomplete, the helper
 falls back to a file-path footprint heuristic, biases toward serial, and flags
 low confidence. **`log()` the degrade** so coverage is not silently overstated.
-Optionally refresh `component-registry` first.
+Optionally refresh `grm-component-registry` first.
 
 ---
 
@@ -112,9 +112,9 @@ Optionally refresh `component-registry` first.
   `Agent` tool with `isolation:"worktree"` — chip-free; Noir does not use
   `spawn_task` chips. Each IM runs on its lane branch and merges its task agents'
   work into it via
-  `release-phase-merge` — unchanged mechanics, scoped to the lane branch.
+  `grm-release-phase-merge` — unchanged mechanics, scoped to the lane branch.
 - **Lane ledger.** Track lane status in the plan (lane → features → IM status →
-  integrated?) — the `release-agent-tracker` view, one tier up.
+  integrated?) — the `grm-release-agent-tracker` view, one tier up.
 - **Lane integration.** As lanes complete, merge each lane branch into
   `version/{X.Y}`. Lanes are component-disjoint by construction, so these merges
   are conflict-free in the common case. A genuine cross-lane conflict means the
@@ -128,7 +128,7 @@ Optionally refresh `component-registry` first.
 Before the official release, dispatch **Verifier** agents — one per shipped
 feature — to check each feature against its **acceptance criteria** (run
 tests/build/release commands; confirm criteria met) and return a structured
-pass/fail report. Optionally also run a Reviewer sweep, `dependency-audit`,
+pass/fail report. Optionally also run a Reviewer sweep, `grm-dependency-audit`,
 `code-health --gate`, and `doc-assurance --strict` at the boundary.
 
 **Gate semantics** (`project-manager.qa-gate`, reusing the v1.26 `code-quality`
@@ -146,11 +146,11 @@ and may mutate history only while HEAD is on its `version/{X.Y}/<lane>` branch
 (the HEAD-drift guard); the cross-worktree hijack guard refuses any op aimed at a
 sibling worktree. The PM worktree performs the lane→`version/{X.Y}`→dev→main
 merges. Place (or provision) the marker per lane as you dispatch it. Detail:
-`docs/integration-workflow.md` §Multiple marked lane worktrees.
+`docs/grimoire/integration-workflow.md` §Multiple marked lane worktrees.
 
 ---
 
-## Config — `project-manager` block
+## Config — `grm-project-manager` block
 
 ```json
 "project-manager": {
@@ -161,7 +161,7 @@ merges. Place (or provision) the marker per lane as you dispatch it. Detail:
 ```
 
 Additive, **no schema-version bump**. Absent ⇒ no PM engaged ⇒ today's
-single-master behavior. `config-validate` knows the block + enums.
+single-master behavior. `grm-config-validate` knows the block + enums.
 
 ---
 
