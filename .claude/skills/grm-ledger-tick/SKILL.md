@@ -1,6 +1,6 @@
 ---
 name: grm-ledger-tick
-description: Update the §5 branch ledger in docs/release-planning-v{X.Y}.md — mark landed branches, record follow-ups, roll deferred work to the next version. Triggers on "tick the ledger", "mark X as landed", "update release planning", "Pass 1/Pass 2", "follow-ups".
+description: Update the §5 branch ledger in docs/release-planning/release-planning-v{X.Y}.md — mark landed branches, record follow-ups, roll deferred work to the next version. Triggers on "tick the ledger", "mark X as landed", "update release planning", "Pass 1/Pass 2", "follow-ups".
 ---
 
 # Release-planning ledger tick
@@ -9,7 +9,7 @@ description: Update the §5 branch ledger in docs/release-planning-v{X.Y}.md —
 > append a SHA). Pin it to **Haiku / low** — it needs no Opus judgement and is
 > often dispatched ~10× per release; inheriting session Opus is pure waste.
 
-The active `docs/release-planning-v{X.Y}.md` holds the canonical pass/branch
+The active `docs/release-planning/release-planning-v{X.Y}.md` holds the canonical pass/branch
 ledger for the in-flight release. The §5 table tracks branches landed vs.
 outstanding, and a follow-ups section captures work that slipped to a later
 version.
@@ -26,7 +26,7 @@ version.
 
 ## Workflow
 
-1. **Locate the active plan.** `ls docs/release-planning-v*.md` — pick the
+1. **Locate the active plan.** `ls docs/release-planning/release-planning-v*.md` — pick the
    highest unreleased version. If you are unsure which is active, find the most
    recently *released* version with
    `python3 .claude/skills/grm-status-broker/version_history.py --latest` (or
@@ -49,7 +49,7 @@ version.
 
 5. **Roll deferred work into the next version.** When the user calls the
    release closed (or when starting the next version's plan), create / append
-   to `docs/release-planning-v{X.Y+1}.md` and move the follow-up bullets
+   to `docs/release-planning/release-planning-v{X.Y+1}.md` and move the follow-up bullets
    there. Leave the originals in place so the landed-version doc is
    self-contained as a historical record.
 

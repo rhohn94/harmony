@@ -1,104 +1,30 @@
 ---
 name: grm-workflow-snapshot
-description: Re-capture the live workflow skills and hooks back into the workflow-bootstrap golden baseline. Use deliberately when you have improved a workflow skill or hook and want it to become the new restore baseline — a manual, on-demand sync, not kept in lock-step with live skills.
+description: Deprecated (v3.49). The golden image is now generated on demand by grm-workflow-bootstrap's generate_golden.py, so there is no committed golden tree to re-baseline. This skill is retained only so historical references resolve; it performs no action. Use generate_golden.py instead.
 ---
 
-# Workflow-snapshot
+# Workflow-snapshot — deprecated (v3.49)
 
-The reverse of `grm-workflow-bootstrap`. It copies the project's **live**
-workflow skills and hooks into `workflow-bootstrap/golden/` so a future
-restore reproduces the current state.
+**This skill is retired.** It used to re-capture the project's live workflow
+skills and hooks back into a committed `golden/` tree so a future restore would
+reproduce the current state. That tree no longer exists.
 
-This exists so projects are **not** burdened with perpetual sync. You
-re-baseline only when you choose to — after a deliberate improvement —
-not on every edit.
+As of v3.49 the **golden image is generated, not stored**:
+`generate_golden.py` (next to `grm-workflow-bootstrap`) derives the pristine
+baseline from the flavor/install on demand and writes it under the gitignored
+`.grimoire-golden/` cache. There is nothing to hand-snapshot — the baseline is
+always re-derivable from the current files.
 
----
+## What to do instead
 
-## When to use this skill
+- **Make an edited skill survive a future restore** — no action needed. Restore
+  resolves the golden image from the live/flavor files, so your current edits are
+  already the baseline once they ship in the flavor.
+- **Freeze an offline restore baseline for an install** —
+  `python3 .claude/skills/grm-workflow-bootstrap/generate_golden.py --freeze .`
+  (run automatically at bootstrap; see `grm-workflow-bootstrap` Step 0).
+- **Inspect what the golden image would contain** —
+  `python3 .claude/skills/grm-workflow-bootstrap/generate_golden.py --flavor claude-code --list`
 
-- You improved a workflow skill/hook and want it to survive a future
-  `grm-workflow-bootstrap` restore.
-- You are preparing this scaffolding to be copied into other projects and
-  want `golden/` to reflect the latest generic version.
-
-Do **not** use it for routine edits you might revert, or to snapshot a
-copy that still has project-specific values baked in (see the warning
-below).
-
----
-
-## Step 1 — Genericise check (critical)
-
-`golden/` must stay **project-agnostic**. Before snapshotting, scan each
-live file for project-specific values that the interview is supposed to
-fill (concrete test/build/release commands, real branch names other than
-`dev`/`main`, real doc paths, a real version file).
-
-For each such value, **re-insert the placeholder token** (per
-`manifest.md`) in the snapshot — do not snapshot the concrete value.
-If a file is irreversibly project-specific, report it and skip it rather
-than poisoning the baseline.
-
-The goal: a fresh project restoring from `golden/` gets clean
-placeholders, not the previous project's commands.
-
----
-
-## Step 2 — Diff preview
-
-For every entry in `manifest.md` "Restorable" tables, `diff` the live
-file against its `golden/` counterpart. Present a summary:
-
-| File | Change |
-|---|---|
-| `skills/<name>/SKILL.md` | structural edit / placeholder re-inserted / unchanged |
-| … | … |
-
-List exactly what will be overwritten in `golden/`. Get explicit user
-confirmation before writing.
-
----
-
-## Step 3 — Capture
-
-For each confirmed file, copy the (genericised) live content over its
-`golden/` counterpart:
-
-- `.claude/skills/<name>/SKILL.md` → `golden/skills/<name>/SKILL.md`
-- `.claude/hooks/<file>`           → `golden/hooks/<file>`
-- `.claude/settings.json`          → `golden/settings.json`
-
-Never snapshot `grm-workflow-bootstrap` or `grm-workflow-snapshot` themselves
-into `golden/` — the meta-skills are not self-restoring.
-
----
-
-## Step 4 — Reconcile the manifest
-
-If skills were added or removed, update `manifest.md`:
-- New skill → add a row to "Restorable skills" + add its golden copy.
-- Removed skill → remove the row and delete its `golden/` copy.
-- New project-config placeholder → add it to the placeholder table.
-
----
-
-## Step 5 — Report
-
-- Files re-baselined (by path).
-- Placeholders re-inserted (concrete value → token), so the user can
-  confirm nothing project-specific leaked into `golden/`.
-- Manifest changes.
-- Skipped files and why.
-
-No git operations. The user reviews and commits.
-
----
-
-## Anti-patterns
-
-- Snapshotting concrete project values into `golden/` — always re-insert
-  placeholders first; a poisoned baseline misconfigures the next project.
-- Auto-syncing on every edit — this is deliberate and on-demand.
-- Snapshotting without the diff-preview confirmation.
-- Snapshotting the meta-skills into their own golden tree.
+Design: the golden-image generation model (v3.49) — `generate_golden.py` and
+`grm-workflow-bootstrap`.

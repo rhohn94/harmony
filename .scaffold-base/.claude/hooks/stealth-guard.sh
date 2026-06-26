@@ -54,7 +54,7 @@ def build_denylist_pattern(extra):
 DEFAULT_MANAGED = (
     ".claude/", "CLAUDE.md", "AGENTS.md",
     "docs/design/", "docs/grimoire/", "docs/roadmap.md", "docs/version-history.md",
-    "docs/release-planning-v", "docs/grimoire/integration-workflow.md",
+    "docs/release-planning-v", "docs/release-planning/", "docs/grimoire/integration-workflow.md",
     "docs/coding-standards", "docs/architecture-guidelines.md",
     ".github/prompts/", ".github/copilot-instructions.md",
 )

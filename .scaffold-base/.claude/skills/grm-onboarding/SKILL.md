@@ -655,7 +655,7 @@ The bridge **reuses the existing release skills** — it does not re-implement
 planning:
 
 - `grm-release-planning` — propose work items from the roadmap.
-- `grm-release-agreement` — lock the plan, write `docs/release-planning-v{X.Y}.md`,
+- `grm-release-agreement` — lock the plan, write `docs/release-planning/release-planning-v{X.Y}.md`,
   and cut `version/{X.Y}`.
 
 The integration master role (`.claude/skills/grm-integration-master/SKILL.md`) owns

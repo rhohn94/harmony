@@ -263,7 +263,9 @@ is_excluded() {
     # docs/release-planning-v{X.Y}.md path (release-machinery + release-plan-guard
     # coupling) but must never ship; exclude the whole top-level prefix.
     docs/release-planning-*) return 0 ;;                      # top-level active plan (never ships)
+    docs/release-planning/*) return 0 ;;                      # v3.45 relocated tier (active + archive)
     docs/version-history.md) return 0 ;;                      # exclude-and-seed: Grimoire's own log never ships
+    .grimoire-golden/*) return 0 ;;                           # generated golden cache (v3.49) — never merged; locally derived
   esac
   return 1
 }

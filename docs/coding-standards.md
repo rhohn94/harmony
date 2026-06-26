@@ -101,7 +101,7 @@ Under the autonomous release pipeline, `grm-release-phase-merge` runs a **qualit
 gate** on each merged branch before ticking the §5 ledger, governed by the
 `code-quality` block in `.claude/grimoire-config.json`. All dials default to
 safe (non-blocking / off), so a project opts into strictness. Authoritative
-design: [`design/merge-gate-quality-design.md`](design/merge-gate-quality-design.md).
+design: the merge-gate quality spec, maintained in the upstream Grimoire repo.
 
 | Dial | Values (default **bold**) | Effect |
 |------|---------------------------|--------|

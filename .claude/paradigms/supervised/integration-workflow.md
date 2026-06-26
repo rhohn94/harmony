@@ -13,7 +13,7 @@ map between them.
    for the next version (reads design docs, roadmap, carryovers).
 2. **Lock scope** — `grm-release-agreement` skill. **Supervised gate: present the
    report and wait for explicit user approval before locking.** Freezes the
-   report into `docs/release-planning-v{X.Y}.md` (§5 ledger) and creates the
+   report into `docs/release-planning/release-planning-v{X.Y}.md` (§5 ledger) and creates the
    `version/{X.Y}` **integration branch** off `dev`.
 3. **Distribute work** — `grm-release-phase` skill. **Supervised gate: list the
    batch and ask "Spawn now?" before calling `spawn_task`.** For each work item

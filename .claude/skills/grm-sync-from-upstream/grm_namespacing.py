@@ -57,7 +57,7 @@ from typing import Iterable
 PREFIX = "grm-"
 
 # Directories never touched (anywhere in the tree).
-EXCLUDED_DIR_NAMES = {".git", ".grimoire-archive", "dist", "node_modules", "__pycache__"}
+EXCLUDED_DIR_NAMES = {".git", ".grimoire-archive", ".grimoire-golden", "dist", "node_modules", "__pycache__"}
 
 # File suffixes treated as rewritable text.
 TEXT_SUFFIXES = {".md", ".py", ".sh", ".json", ".toml", ".txt", ".yml", ".yaml", ".js"}
@@ -115,8 +115,9 @@ class GrmNamespacer:
 
     def _skills_parents(self) -> list[Path]:
         """Every directory literally named `skills` under root (excluding the
-        excluded dirs), i.e. the flavor `.claude/skills` trees AND every
-        `workflow-bootstrap/golden/skills` tree."""
+        excluded dirs), i.e. the flavor `.claude/skills` trees. (The former
+        embedded `workflow-bootstrap/golden/skills` tree no longer exists — golden
+        is generated, and its cache dir is excluded from the walk.)"""
         parents: list[Path] = []
         for dirpath, dirnames, _ in os.walk(self.root):
             dirnames[:] = [d for d in dirnames if d not in EXCLUDED_DIR_NAMES]

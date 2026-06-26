@@ -9,7 +9,7 @@ description: Track the status of all subagent branches for the in-flight release
 > against `git branch`, flip `☐`→`☑`). Pin it to **Sonnet / inherit** — it needs
 > table-following capacity but not Opus judgement; inheriting session Opus is waste.
 
-The §5 ledger in `docs/release-planning-v{X.Y}.md` is the canonical source of
+The §5 ledger in `docs/release-planning/release-planning-v{X.Y}.md` is the canonical source of
 truth for agent status. This skill reads it, cross-references the live git
 branch list, and updates it when the user reports an agent done.
 
@@ -32,7 +32,7 @@ branch list, and updates it when the user reports an agent done.
 ## Step 1 — Locate the active plan
 
 ```bash
-ls docs/release-planning-v*.md
+ls docs/release-planning/release-planning-v*.md
 ```
 
 Pick the highest-version file with `status: agreed`. Read §5 entirely.

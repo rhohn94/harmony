@@ -7,16 +7,42 @@ description: Guided install and restore of the agentic-workflow skill set. Detec
 
 Equips a project's Claude agent with the workflow skill set and tailors it
 to the project — without the user hand-editing a dozen files. It restores
-skills from **self-contained golden copies** bundled in `golden/`, so it
-works even if every sibling skill was deleted.
+skills from a **golden baseline** that is **generated**, not a committed
+tree: `generate_golden.py` derives it from the pristine install (or extracts
+a frozen archive), so restore works even if every sibling skill was deleted.
 
-The golden copies are **generic** (placeholder-laden, language-agnostic).
-Bootstrap restores structure, then the interview customises it. The copies
-are a point-in-time baseline, not a perpetually-synced mirror — see the
-`grm-workflow-snapshot` skill to re-baseline later.
+The golden baseline is **generic** (placeholder-laden, language-agnostic).
+Bootstrap restores structure, then the interview customises it. It is a
+point-in-time baseline frozen at install/version-change — not a
+perpetually-synced mirror.
 
 `manifest.md` (next to this file) is the source of truth for the canonical
 set and the project-config placeholders.
+
+> **Golden is generated (v3.49).** There is no longer a committed `golden/`
+> tree. `generate_golden.py` derives the golden image from the flavor/install
+> and writes it under the gitignored `.grimoire-golden/` cache. Throughout this
+> guide, "the golden tree" / "`golden/…`" means the **resolved** tree returned
+> by `resolve_golden()` (typically `.grimoire-golden/tree/`).
+
+---
+
+## Step 0 — Resolve / freeze the golden baseline
+
+Before any inventory, materialize the golden baseline:
+
+- **Fresh install (first bootstrap):** the just-copied files are pristine, so
+  freeze a versioned baseline from them —
+  `python3 .claude/skills/grm-workflow-bootstrap/generate_golden.py --freeze .`
+  This writes `.grimoire-golden/golden-v{X.Y}.tar.gz` (the offline restore
+  baseline). No network needed.
+- **`--restore` / repair (later):** do **not** re-freeze from the now-customised
+  tree (that would poison the baseline). Resolve the existing baseline instead —
+  `… generate_golden.py --ensure-tree .` extracts the frozen archive (or, in the
+  source/dogfood repo, generates from the `claude-code/` flavor) to
+  `.grimoire-golden/tree/`.
+
+All subsequent steps diff/restore against this resolved tree.
 
 ---
 
@@ -25,7 +51,7 @@ set and the project-config placeholders.
 Read `manifest.md`. For each entry under "Restorable skills",
 "Restorable infrastructure", "Restorable workflows", and "Restorable
 paradigm content sets", classify the live copy by comparing the project
-file against `golden/`:
+file against the resolved golden tree (Step 0):
 
 | State | Meaning | Default action |
 |---|---|---|
@@ -34,10 +60,11 @@ file against `golden/`:
 | **CUSTOMISED**| Live differs, no project-config placeholders left. | Leave as-is. |
 | **DRIFTED**   | Live differs *and* still has placeholders, or structurally diverged. | Ask before touching. |
 
-Use `diff` against `golden/skills/<name>/SKILL.md`,
-`golden/hooks/<file>`, `golden/settings.json`, and
-`golden/workflows/<name>.js` (for any `.claude/workflows/*.js`). Present
-the inventory as a table before changing anything.
+Use `diff` against `<golden>/skills/<name>/SKILL.md`,
+`<golden>/hooks/<file>`, `<golden>/settings.json`, and
+`<golden>/workflows/<name>.js` (for any `.claude/workflows/*.js`), where
+`<golden>` is the resolved tree from Step 0. Present the inventory as a table
+before changing anything.
 
 ---
 

@@ -2,14 +2,10 @@
   "schema_version": 1,
   "grimoire_version": "3.41",
   "flavor": "claude-code",
-  "generated_by": "CR-4 (clean-room-design.md \u00a71)",
-  "description": "Authoritative enumeration of every Grimoire-owned file in the claude-code flavor. Used by CR-5 regenerate to partition files into delete+restore (pure-framework), split/merge (mixed), or preserve (project-owned). Cross-referenced with .claude/skills/grm-workflow-bootstrap/manifest.md \u2014 that file enumerates restorable skills; this manifest extends it with class tagging and covers ALL framework-owned paths, not only the restorable subset.",
+  "generated_by": "CR-4 (clean-room-design.md §1)",
+  "description": "Authoritative enumeration of every Grimoire-owned file in the claude-code flavor. Used by CR-5 regenerate to partition files into delete+restore (pure-framework), split/merge (mixed), or preserve (project-owned). Cross-referenced with .claude/skills/grm-workflow-bootstrap/manifest.md — that file enumerates restorable skills; this manifest extends it with class tagging and covers ALL framework-owned paths, not only the restorable subset.",
   "cr2_assumed_prefixes": [
     "docs/grimoire/design/",
-    "docs/grimoire/feature-playbook-validation.md",
-    "docs/grimoire/issue-tracker-cost-spike.md",
-    "docs/grimoire/issue-tracker-cost-validation.md",
-    "docs/grimoire/sync-flow-audit.md",
     "docs/grimoire/docs-organization-design.md",
     "docs/grimoire/maintaining-grimoire.md",
     "docs/integration-workflow.md",
@@ -18,27 +14,28 @@
     "docs/token-efficiency-baseline.md",
     "docs/token-efficiency-trim-decision.md",
     "docs/execution-profile-spike-s1.md",
-    "docs/release-planning-v"
+    "docs/release-planning-v",
+    "docs/release-planning/"
   ],
   "notes": [
-    "Operational docs tagged 'relocate' (docs/integration-workflow.md, docs/version-design.md, docs/token-efficiency-*.md, docs/execution-profile-spike-s1.md, docs/release-planning-v*.md) are pure-framework but currently ship from top-level docs/. CR-3 moves them to docs/grimoire/; this manifest reflects the post-CR-2/CR-3 intended end-state per clean-room-design.md \u00a74.",
+    "Operational docs tagged 'relocate' (docs/integration-workflow.md, docs/version-design.md, docs/token-efficiency-*.md, docs/execution-profile-spike-s1.md, docs/release-planning-v*.md) are pure-framework but currently ship from top-level docs/. CR-3 moves them to docs/grimoire/; this manifest reflects the post-CR-2/CR-3 intended end-state per clean-room-design.md §4.",
     "The 'ships' field reflects the intended end-state: 'no' for excluded-from-distributable files, 'yes' for shipped files.",
     "Globs use Python fnmatch conventions. The validator resolves globs against the real tree.",
-    "manifest.md cross-reference: every restorable skill listed in .claude/skills/grm-workflow-bootstrap/manifest.md maps to a pure-framework entry here. The manifest.md is itself pure-framework (manifests row in \u00a71 taxonomy)."
+    "manifest.md cross-reference: every restorable skill listed in .claude/skills/grm-workflow-bootstrap/manifest.md maps to a pure-framework entry here. The manifest.md is itself pure-framework (manifests row in §1 taxonomy)."
   ],
   "entries": [
     {
       "path": "CLAUDE.md",
       "class": "mixed",
       "ships": true,
-      "regenerate_disposition": "split/merge \u2014 section+sentinel aware (see clean-room-design.md \u00a72)",
+      "regenerate_disposition": "split/merge — section+sentinel aware (see clean-room-design.md §2)",
       "notes": "Framework owns standard managed sections; project owns Project-commands placeholders and project-authored sections. Never blind-replaced."
     },
     {
       "path": ".gitignore",
       "class": "mixed",
       "ships": true,
-      "regenerate_disposition": "section-merge \u2014 only the Grimoire-managed delimited section is replaced",
+      "regenerate_disposition": "section-merge — only the Grimoire-managed delimited section is replaced",
       "notes": "Project lines and ordering preserved. Append section if absent; idempotent."
     },
     {
@@ -66,29 +63,29 @@
       "path": ".scaffold-upstream.conf",
       "class": "pure-framework",
       "ships": true,
-      "regenerate_disposition": "seed-only \u2014 written only if missing (never overwrites UPSTREAM_REPO set by project)",
+      "regenerate_disposition": "seed-only — written only if missing (never overwrites UPSTREAM_REPO set by project)",
       "notes": "Default Grimoire upstream URL seed. Idempotent."
     },
     {
       "path": "vendor.toml",
       "class": "mixed",
       "ships": true,
-      "regenerate_disposition": "seed-only \u2014 written only if missing (never clobbers project dep declarations)",
+      "regenerate_disposition": "seed-only — written only if missing (never clobbers project dep declarations)",
       "notes": "Dependency Channel intent seed. Per manifest.md Step 2.8."
     },
     {
       "path": ".claude/grimoire-config.json",
       "class": "mixed",
       "ships": true,
-      "regenerate_disposition": "3-way merge \u2014 framework schema/dials reset to golden; project keys preserved",
-      "notes": "See clean-room-design.md \u00a72. Never overwrite project keys."
+      "regenerate_disposition": "3-way merge — framework schema/dials reset to golden; project keys preserved",
+      "notes": "See clean-room-design.md §2. Never overwrite project keys."
     },
     {
       "path": ".claude/settings.json",
       "class": "mixed",
       "ships": true,
-      "regenerate_disposition": "3-way merge \u2014 framework allowlist+hooks block reset to golden; project keys preserved",
-      "notes": "The existing workflow-bootstrap --restore settings-merge, made canonical. See \u00a72."
+      "regenerate_disposition": "3-way merge — framework allowlist+hooks block reset to golden; project keys preserved",
+      "notes": "The existing workflow-bootstrap --restore settings-merge, made canonical. See §2."
     },
     {
       "path": ".claude/push-allowlist",
@@ -102,7 +99,7 @@
       "class": "pure-framework",
       "ships": true,
       "regenerate_disposition": "delete+restore from golden",
-      "notes": "Single source of truth for band \u00d7 profile matrix."
+      "notes": "Single source of truth for band × profile matrix."
     },
     {
       "path": ".claude/architecture-rules.example.json",
@@ -123,7 +120,7 @@
       "class": "pure-framework",
       "ships": true,
       "regenerate_disposition": "delete+restore from golden",
-      "notes": "Hook guard \u2014 pure framework logic."
+      "notes": "Hook guard — pure framework logic."
     },
     {
       "path": ".claude/hooks/push-guard.sh",
@@ -887,14 +884,14 @@
       "class": "pure-framework",
       "ships": true,
       "regenerate_disposition": "self-preserving (never archives/clears in-flight skill); restored last",
-      "notes": "Meta-skill. Not self-restoring in the usual sense \u2014 it IS the restorer."
+      "notes": "Meta-skill. Not self-restoring in the usual sense — it IS the restorer."
     },
     {
       "path": ".claude/skills/grm-workflow-bootstrap/manifest.md",
       "class": "pure-framework",
       "ships": true,
       "regenerate_disposition": "delete+restore from golden",
-      "notes": "Cross-reference: this file (grimoire-files.json) extends manifest.md. manifest.md lists restorable skills; grimoire-files.json classifies all framework-owned paths. CR-4 note: no silent second source of truth \u2014 grimoire-files.json explicitly defers to manifest.md for the restorable-skill inventory and extends it with class tags."
+      "notes": "Cross-reference: this file (grimoire-files.json) extends manifest.md. manifest.md lists restorable skills; grimoire-files.json classifies all framework-owned paths. CR-4 note: no silent second source of truth — grimoire-files.json explicitly defers to manifest.md for the restorable-skill inventory and extends it with class tags."
     },
     {
       "path": ".claude/skills/grm-workflow-bootstrap/reference.md",
@@ -903,11 +900,18 @@
       "regenerate_disposition": "delete+restore from golden"
     },
     {
-      "path": ".claude/skills/grm-workflow-bootstrap/golden/**",
+      "path": ".claude/skills/grm-workflow-bootstrap/generate_golden.py",
       "class": "pure-framework",
       "ships": true,
-      "regenerate_disposition": "the restore SOURCE \u2014 re-captured only by workflow-snapshot; never deleted by regenerate",
-      "notes": "Golden baseline is what regenerate restores FROM. It is itself pure-framework."
+      "regenerate_disposition": "delete+restore from golden",
+      "notes": "Derives the golden image from the flavor/install; the restore SOURCE is now generated (.grimoire-golden/, gitignored), not a committed tree."
+    },
+    {
+      "path": ".claude/skills/grm-workflow-bootstrap/seed/**",
+      "class": "pure-framework",
+      "ships": true,
+      "regenerate_disposition": "delete+restore from golden",
+      "notes": "Operational seed supplement folded into the generated golden (files the flavor snapshot does not carry: version-history seed, vendor.toml, upstream conf)."
     },
     {
       "path": ".claude/skills/grm-workflow-scaffold/SKILL.md",
@@ -963,7 +967,7 @@
       "class": "pure-framework",
       "ships": true,
       "regenerate_disposition": "delete+restore from golden",
-      "notes": "Tier index \u2014 consumer-facing wiki-convention authority (v3.39 \u00a76). Deliberately NOT in exclusion set."
+      "notes": "Tier index — consumer-facing wiki-convention authority (v3.39 §6). Deliberately NOT in exclusion set."
     },
     {
       "path": "docs/grimoire/design/**",
@@ -973,67 +977,32 @@
       "notes": "Whole framework design subtree. Excluded from distributables (EXCLUDED_PATH_PREFIXES + is_excluded). Post-CR-2/CR-3 end-state."
     },
     {
-      "path": "docs/grimoire/feature-playbook-validation.md",
-      "class": "pure-framework",
-      "ships": false,
-      "regenerate_disposition": "delete+restore",
-      "notes": "Study artifact. Excluded from distributables."
-    },
-    {
-      "path": "docs/grimoire/issue-tracker-cost-spike.md",
-      "class": "pure-framework",
-      "ships": false,
-      "regenerate_disposition": "delete+restore",
-      "notes": "Study artifact. Excluded from distributables."
-    },
-    {
-      "path": "docs/grimoire/issue-tracker-cost-validation.md",
-      "class": "pure-framework",
-      "ships": false,
-      "regenerate_disposition": "delete+restore",
-      "notes": "Study artifact. Excluded from distributables."
-    },
-    {
-      "path": "docs/grimoire/sync-flow-audit.md",
-      "class": "pure-framework",
-      "ships": false,
-      "regenerate_disposition": "delete+restore",
-      "notes": "Study artifact. Excluded from distributables."
-    },
-    {
       "path": "docs/grimoire/docs-organization-design.md",
       "class": "pure-framework",
       "ships": false,
       "regenerate_disposition": "delete+restore",
-      "notes": "Now internal (DS-1 \u00a76). Excluded from distributables."
+      "notes": "Now internal (DS-1 §6). Excluded from distributables."
     },
     {
       "path": "docs/grimoire/integration-workflow.md",
       "class": "pure-framework",
       "ships": false,
       "regenerate_disposition": "delete+restore from golden (excluded; relocated to docs/grimoire/ by v3.41 CR-2)",
-      "notes": "Operational doc \u2014 relocate per \u00a74. Currently ships from top-level docs/; post-CR-3 will be excluded. CR-2 assumed prefix applied."
+      "notes": "Operational doc — relocate per §4. Currently ships from top-level docs/; post-CR-3 will be excluded. CR-2 assumed prefix applied."
     },
     {
       "path": "docs/grimoire/version-design.md",
       "class": "pure-framework",
       "ships": false,
       "regenerate_disposition": "delete+restore from golden (excluded; relocated to docs/grimoire/ by v3.41 CR-2)",
-      "notes": "Framework versioning scheme \u2014 internal. Relocate per \u00a74."
-    },
-    {
-      "path": "docs/grimoire/execution-profile-spike-s1.md",
-      "class": "pure-framework",
-      "ships": false,
-      "regenerate_disposition": "delete+restore from golden (excluded; relocated to docs/grimoire/ by v3.41 CR-2)",
-      "notes": "Framework-dev spike artifact. Relocate per \u00a74."
+      "notes": "Framework versioning scheme — internal. Relocate per §4."
     },
     {
       "path": "docs/roadmap.md",
       "class": "mixed",
       "ships": true,
-      "regenerate_disposition": "baseline-row reconcile \u2014 framework baseline rows reconciled, project rows untouched",
-      "notes": "See clean-room-design.md \u00a72. Already shielded in sync-from-upstream is_excluded()."
+      "regenerate_disposition": "baseline-row reconcile — framework baseline rows reconciled, project rows untouched",
+      "notes": "See clean-room-design.md §2. Already shielded in sync-from-upstream is_excluded()."
     },
     {
       "path": "docs/version-history.md",
@@ -1078,26 +1047,33 @@
       "path": "docs/design/README.md",
       "class": "pure-framework",
       "ships": true,
-      "regenerate_disposition": "seed-only \u2014 written only if missing; never overwrites project content",
+      "regenerate_disposition": "seed-only — written only if missing; never overwrites project content",
       "notes": "Template stub. The project owns docs/design/** otherwise."
     },
     {
       "path": "docs/design/ux/design-language.md",
       "class": "mixed",
       "ships": true,
-      "regenerate_disposition": "seed-only for GUI projects \u2014 source-url: field confirmed/preserved if set",
+      "regenerate_disposition": "seed-only for GUI projects — source-url: field confirmed/preserved if set",
       "notes": "GUI-projects only. Seeded by workflow-bootstrap Step 2.5. source-url: not overwritten if already set."
     },
     {
       "path": "docs/design/**",
       "class": "project-owned",
       "ships": false,
-      "regenerate_disposition": "PRESERVE \u2014 never touched by regenerate",
-      "notes": "Project design docs, UX docs (incl. ux/README.md, ux/components.md, ux/theme.md). design-language.md is the only mixed exception (listed separately above)."
+      "regenerate_disposition": "PRESERVE — never touched by regenerate",
+      "notes": "Project design docs, UX docs (incl. ux/README.md, ux/components.md, ux/theme.md). design-language.md is the only mixed exception (listed separately above). The seed subtree indexes (architecture/, data-persistence/, distribution/) and their skeleton design docs are golden-seeded scaffolding under this glob."
+    },
+    {
+      "path": "docs/template-files/**",
+      "class": "pure-framework",
+      "ships": true,
+      "regenerate_disposition": "delete+restore from golden",
+      "notes": "Static copy-to-start templates (tier index + design-doc-template). Promoted to consumers v3.47."
     }
   ],
   "project_owned_exclusions": {
-    "description": "Paths outside the framework layer \u2014 never created/edited/deleted by Grimoire regenerate. Listed here for completeness so CR-5 can build its preserve-set without guessing.",
+    "description": "Paths outside the framework layer — never created/edited/deleted by Grimoire regenerate. Listed here for completeness so CR-5 can build its preserve-set without guessing.",
     "patterns": [
       "docs/design/**",
       ".grimoire-archive/**",

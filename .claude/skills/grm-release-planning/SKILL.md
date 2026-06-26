@@ -26,7 +26,7 @@ Before reading anything, answer these three questions from available context
 
 1. **What is the current released version?** → `docs/version-history.md`
    (first heading, or equivalent changelog).
-2. **What is the in-flight release?** → `ls docs/release-planning-v*.md`;
+2. **What is the in-flight release?** → `ls docs/release-planning/release-planning-v*.md`;
    the highest version without a matching entry in `version-history.md`.
 3. **What is the target version?** → one MINOR bump beyond the in-flight
    release. Confirm with the user if ambiguous.
@@ -40,8 +40,8 @@ Read these documents in order. Do not skip; carryovers live across all of them.
 | Document | What to extract |
 |---|---|
 | `docs/roadmap.md` §`v{X.Y}` | Flagship theme, named sub-items, explicit non-goals |
-| `docs/release-planning-v{X.Y-1}.md` §4 "Out of Scope" | Items explicitly tagged `v{X.Y}+` or `later` |
-| `docs/release-planning-v{X.Y-1}.md` §5 "Follow-ups" | Pass-N follow-up bullets tagged for roll-forward |
+| `docs/release-planning/release-planning-v{X.Y-1}.md` §4 "Out of Scope" | Items explicitly tagged `v{X.Y}+` or `later` |
+| `docs/release-planning/release-planning-v{X.Y-1}.md` §5 "Follow-ups" | Pass-N follow-up bullets tagged for roll-forward |
 | `docs/design/README.md` | Overall architecture orientation; cross-links to feature docs |
 | Any feature design doc named in the roadmap §`v{X.Y}` entry | Existing spec depth; what's already designed vs. still open |
 
@@ -161,7 +161,7 @@ decide on before the plan is locked.
 
 ## After the report
 
-The report is a planning input. Do not create `docs/release-planning-v{X.Y}.md`
+The report is a planning input. Do not create `docs/release-planning/release-planning-v{X.Y}.md`
 automatically — wait for the user to confirm scope. When scope is settled:
 
 1. Use **`grm-design-doc-scaffold`** for any missing design docs flagged in §4.
@@ -179,7 +179,7 @@ automatically — wait for the user to confirm scope. When scope is settled:
   creep; list them explicitly.
 * Giving every item the same token estimate. A range of 8K–150K across a
   single release is normal and expected; be honest about large items.
-* Writing `docs/release-planning-v{X.Y}.md` before the user confirms scope —
+* Writing `docs/release-planning/release-planning-v{X.Y}.md` before the user confirms scope —
   the report is a conversation starter, not a final plan.
 * Pulling items from `roadmap.md §v{X.Y+1}` or later — stay one version at a
   time.

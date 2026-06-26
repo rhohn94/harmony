@@ -49,10 +49,23 @@ from typing import Any
 CONFIG_FILE = ".claude/grimoire-config.json"
 UPSTREAM_CONF = ".scaffold-upstream.conf"
 BASE_ROOT = ".scaffold-base"
-# Golden baseline lives inside the grm-workflow-bootstrap skill; the doctor reuses
+# The golden baseline is a generated artifact (no longer a committed tree). The
+# doctor resolves it via grm-workflow-bootstrap's generate_golden helper and reuses
 # it as the canonical file set rather than maintaining its own list.
-GOLDEN_REL = ".claude/skills/grm-workflow-bootstrap/golden"
+GENERATE_GOLDEN_REL = ".claude/skills/grm-workflow-bootstrap/generate_golden.py"
 FLAVOR_DIR = "claude-code"
+
+
+def _load_generate_golden(root: Path):
+    """Load the generate_golden helper module from the bootstrap skill, or None."""
+    import importlib.util
+    gen_path = root / GENERATE_GOLDEN_REL
+    if not gen_path.exists():
+        return None
+    spec = importlib.util.spec_from_file_location("generate_golden", gen_path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
 # Files that legitimately carry per-project values; a content difference is
 # expected, so we down-grade DRIFTED to CUSTOMISED rather than flagging it.
@@ -158,11 +171,16 @@ def audit_framework(root: Path) -> list[Check]:
     actionable states the doctor cares about: MISSING and DRIFTED.
     """
     checks: list[Check] = []
-    golden = root / GOLDEN_REL
-    if not golden.is_dir():
+    gen = _load_generate_golden(root)
+    if gen is None:
         return [Check("golden-baseline", "fail",
-                      f"golden baseline not found at {GOLDEN_REL} — "
+                      f"generate_golden helper not found at {GENERATE_GOLDEN_REL} — "
                       "cannot audit framework files; run workflow-bootstrap")]
+    try:
+        golden = gen.resolve_golden(root)
+    except FileNotFoundError as exc:
+        return [Check("golden-baseline", "fail",
+                      f"{exc} — cannot audit framework files")]
 
     for gfile in sorted(golden.rglob("*")):
         if not gfile.is_file():
@@ -192,24 +210,14 @@ def audit_framework(root: Path) -> list[Check]:
 def live_path_for(root: Path, rel: Path) -> Path:
     """Map a golden-relative path to its live location.
 
-    The golden tree mirrors the flavor root: golden/skills/... → .claude/skills/...,
-    golden/hooks/... → .claude/hooks/..., golden/docs/... → docs/..., and
-    top-level files (CLAUDE.md, settings.json, .scaffold-upstream.conf) to their
-    canonical homes.
+    Delegates to generate_golden's bidirectional FlavorLayout (the single mapping
+    authority) so every golden member — including mcp-servers/, stealth/,
+    quick-start-templates/, mcp.json, grimoire-files.json — maps correctly.
     """
-    parts = rel.parts
-    head = parts[0]
-    if head in {"skills", "hooks", "workflows", "paradigms"}:
-        return root / ".claude" / rel
-    if head in {"settings.json", "push-allowlist", "model-effort-profiles.json"}:
-        return root / ".claude" / rel
-    if head == "docs":
-        return root / rel
-    if head == "CLAUDE.md":
-        return root / rel
-    if head == UPSTREAM_CONF:
-        return root / rel
-    # Default: place under repo root.
+    gen = _load_generate_golden(root)
+    if gen is not None:
+        return root / gen.FlavorLayout().golden_to_repo(rel.as_posix())
+    # Fallback if the helper is unavailable: pass through at repo root.
     return root / rel
 
 

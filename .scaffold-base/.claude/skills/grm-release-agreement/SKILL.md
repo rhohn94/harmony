@@ -1,12 +1,12 @@
 ---
 name: grm-release-agreement
-description: Finalize and lock a release plan after the user approves the work-items report. Creates docs/release-planning-v{X.Y}.md (draft then agreed — the guard hook requires this two-step lock), creates the version/{X.Y} staging branch off dev, and sets up the §5 ledger. Use when the user wants to lock, finalize, or agree the scope of vX.Y. Run after release-planning has produced an approved report.
+description: Finalize and lock a release plan after the user approves the work-items report. Creates docs/release-planning/release-planning-v{X.Y}.md (draft then agreed — the guard hook requires this two-step lock), creates the version/{X.Y} staging branch off dev, and sets up the §5 ledger. Use when the user wants to lock, finalize, or agree the scope of vX.Y. Run after release-planning has produced an approved report.
 ---
 
 # Release agreement
 
 Transitions a work-items report (from the `grm-release-planning` skill) into a
-locked `docs/release-planning-v{X.Y}.md` and a staging branch
+locked `docs/release-planning/release-planning-v{X.Y}.md` and a staging branch
 `version/{X.Y}` off `dev`. Nothing is implemented yet — this step just
 freezes the scope so all subagents work from the same contract.
 
@@ -27,7 +27,7 @@ revision point.
 
 ## Step 2 — Write the planning doc with `status: draft`
 
-Create `docs/release-planning-v{X.Y}.md` following the structure below. Use
+Create `docs/release-planning/release-planning-v{X.Y}.md` following the structure below. Use
 `status: draft` — **not** `agreed` — so the release-plan-guard hook does not
 block the initial write.
 
@@ -138,7 +138,7 @@ directly on `version/{X.Y}` and commit it (Step 5). See
 ## Step 5 — Commit the planning doc on the staging branch
 
 ```bash
-git add docs/release-planning-v{X.Y}.md
+git add docs/release-planning/release-planning-v{X.Y}.md
 git commit -m "docs(release-v{X.Y}): create release plan (status: draft)"
 ```
 

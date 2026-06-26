@@ -51,7 +51,14 @@ import subprocess
 import sys
 
 # ── Constants (no magic numbers inline) ─────────────────────────────────────
-PLAN_GLOB = os.path.join("docs", "release-planning-v*.md")
+# v3.45 "Release-planning relocation": the active plan lives at the root of the
+# dedicated docs/release-planning/ tier. The pre-v3.45 top-level path is kept as a
+# backward-compat glob so a synced-but-not-yet-migrated tree still resolves. The
+# tier-root glob does NOT recurse into archived/ (glob '*' never crosses '/').
+PLAN_GLOBS = [
+    os.path.join("docs", "release-planning", "release-planning-v*.md"),  # v3.45 tier (active)
+    os.path.join("docs", "release-planning-v*.md"),                      # pre-v3.45 (backward-compat)
+]
 PLAN_VERSION_RE = re.compile(r"release-planning-v([0-9]+(?:\.[0-9]+)*)\.md$")
 AGREED_RE = re.compile(r"^>?\s*status:\s*agreed\b", re.IGNORECASE | re.MULTILINE)
 # Ledger checkbox glyphs. ☑ = done, ☐ = outstanding; "n/a" = not-applicable.
@@ -105,8 +112,11 @@ class PlanLocator:
         return tuple(int(p) for p in m.group(1).split("."))
 
     def candidates(self):
-        return sorted(glob.glob(os.path.join(self.root, PLAN_GLOB)),
-                      key=self._version_key)
+        found = []
+        for g in PLAN_GLOBS:
+            found.extend(glob.glob(os.path.join(self.root, g)))
+        # De-dup (a path could match more than one glob in pathological trees).
+        return sorted(set(found), key=self._version_key)
 
     @staticmethod
     def _is_agreed(path):
