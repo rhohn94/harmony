@@ -36,7 +36,7 @@ python3 .claude/skills/grm-qa-agent/qa_select.py --release v3.2
 ```
 
 It reads `docs/version-history.md` (the release list), `docs/grimoire/qa-ledger.md`
-(which releases are already verified), and each `docs/release-planning-vX.Y.md`
+(which releases are already verified), and each `docs/release-planning/release-planning-vX.Y.md`
 (the §5 Status Ledger + referenced design docs), and returns JSON: the selected
 release(s), each release's feature `items`, the `acceptance_sources` (design
 docs), and a `degraded` list when a source is missing. **Scope is opt-in per

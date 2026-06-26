@@ -68,7 +68,7 @@ paradigm. It changes *what artifacts the work may leave behind*.
    /docs/design/
    /docs/roadmap.md
    /docs/version-history.md
-   /docs/release-planning-v*.md
+   /docs/release-planning/release-planning-v*.md
    /docs/grimoire/integration-workflow.md
    /docs/coding-standards*
    /docs/architecture-guidelines.md

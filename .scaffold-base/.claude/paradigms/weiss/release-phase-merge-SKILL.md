@@ -72,7 +72,7 @@ Summarise for the user:
 - Files changed and what they do.
 - Scope: within or outside §2.{N}?
 - Any `TODO` / `FIXME` or missing tests.
-- Any edits to `docs/release-planning-v{X.Y}.md` §§1–4 — flag and ask the
+- Any edits to `docs/release-planning/release-planning-v{X.Y}.md` §§1–4 — flag and ask the
   user whether to proceed or reject.
 
 ### 2. Confirm before merging (per-branch gate)
@@ -105,7 +105,7 @@ After the user acknowledges the test pass, tick ☑ Merged and commit the
 ledger update:
 
 ```bash
-git add docs/release-planning-v{X.Y}.md
+git add docs/release-planning/release-planning-v{X.Y}.md
 git commit -m "docs(release-v{X.Y}): tick §5 — {branch} merged ({short-sha})"
 ```
 

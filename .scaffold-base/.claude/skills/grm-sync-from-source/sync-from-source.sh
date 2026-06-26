@@ -14,7 +14,8 @@
 #     workflow-snapshot, sync-from-source, manifest.md, README, templates)
 #   * copies VERBATIM — it does NOT genericize. Files containing source-specific
 #     tokens are flagged "needs-genericize"; the sync-from-source SKILL handles
-#     re-inserting placeholders and updating golden/ afterward.
+#     re-inserting placeholders. (The golden image is generated on demand by
+#     generate_golden.py — there is no committed golden tree to refresh.)
 #
 # Usage:
 #   ./sync-from-source.sh [SOURCE_DIR] [--apply] [--diff]
@@ -218,7 +219,8 @@ if [ "$APPLY" -eq 1 ]; then
     echo "  (re-insert placeholders per workflow-bootstrap/manifest.md):"
     printf "%b\n" "$NEEDS_GENERICIZE"
     echo
-    echo "  Then run the grm-workflow-snapshot skill to refresh golden/ copies."
+    echo "  The golden image regenerates from these files on demand"
+    echo "  (generate_golden.py) — no separate golden refresh is needed."
   fi
 else
   echo "Re-run with --apply to write, or --diff to see full diffs."

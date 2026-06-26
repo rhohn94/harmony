@@ -78,7 +78,7 @@ into the relevant `release-planning-v{X.Y}.md` ledger.
 * Stage and commit the doc on your work branch:
   `docs(design): add {feature}-design.md`. Atomic commit — design doc only.
 * If the feature is targeted at a specific release, add a line to that
-  release's `docs/release-planning-v{X.Y}.md` ledger pointing at the doc.
+  release's `docs/release-planning/release-planning-v{X.Y}.md` ledger pointing at the doc.
   (The **`grm-ledger-tick`** skill handles that update.)
 * **Mandatory:** Update `docs/design/README.md` to index the new doc with a
   RELATIVE LINK — e.g. `- [{feature}-design.md]({feature}-design.md) — Description`.

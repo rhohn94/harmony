@@ -24,7 +24,7 @@ Before acting, build a full picture of what is in flight.
    `git worktree list`.
 2. Identify the active `version/{X.Y}` staging branch (if any):
    `git branch | grep 'version/'`.
-3. Read the §5 ledger in `docs/release-planning-v{X.Y}.md` (consult
+3. Read the §5 ledger in `docs/release-planning/release-planning-v{X.Y}.md` (consult
    `grm-release-agent-tracker` for the reconciled state table). Determine which
    work-item branches are Implemented but not yet Merged.
 4. Check for drift: `git fetch origin && git log --oneline origin/dev..dev` and

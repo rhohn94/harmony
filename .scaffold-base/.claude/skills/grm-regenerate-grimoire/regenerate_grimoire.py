@@ -51,9 +51,35 @@ import tempfile
 from pathlib import Path
 
 MANIFEST_FILENAME = "grimoire-files.json"
-GOLDEN_REL = ".claude/skills/grm-workflow-bootstrap/golden"
+# The golden baseline is a generated artifact resolved at runtime (no longer a
+# committed tree). It materializes under the gitignored cache dir below; the
+# generator helper lives with grm-workflow-bootstrap.
+GENERATE_GOLDEN_REL = ".claude/skills/grm-workflow-bootstrap/generate_golden.py"
+GOLDEN_CACHE_REL = ".grimoire-golden/tree"
+GOLDEN_CACHE_PREFIX = ".grimoire-golden/"
 ARCHIVE_DIR = ".grimoire-archive"
 ARCHIVE_REASON = "regenerate"
+
+
+def _resolve_golden_root(root: Path) -> Path | None:
+    """Materialize and return the golden tree for `root`, or None if unavailable.
+
+    Prefers grm-workflow-bootstrap's generate_golden.resolve_golden (extract frozen
+    archive / generate from a flavor); falls back to a pre-materialized tree under
+    the cache dir (used by the offline self-test fixture).
+    """
+    import importlib.util
+    gen_path = root / GENERATE_GOLDEN_REL
+    if gen_path.exists():
+        spec = importlib.util.spec_from_file_location("generate_golden", gen_path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        try:
+            return mod.resolve_golden(root)
+        except FileNotFoundError:
+            return None
+    cached = root / GOLDEN_CACHE_REL
+    return cached if cached.is_dir() else None
 
 # ---------------------------------------------------------------------------
 # Golden <-> repo path mapping
@@ -175,8 +201,8 @@ def classify_entries(entries: list[dict]) -> dict[str, list[dict]]:
 
 
 def _golden_is_restore_source(path: str) -> bool:
-    """True for the golden subtree itself — the restore SOURCE, never deleted."""
-    return path.startswith(GOLDEN_REL)
+    """True for the golden cache itself — the restore SOURCE, never deleted."""
+    return path.startswith(GOLDEN_CACHE_PREFIX)
 
 
 def resolve_delete_set(
@@ -585,11 +611,12 @@ def detect_audience(root: Path, manifest: dict) -> str:
 
 def regenerate(root: Path, check: bool, assume_yes: bool, now=None) -> int:
     """Drive the surgical regenerate. Returns process exit code."""
-    golden_root = root / GOLDEN_REL
-    if not golden_root.exists():
-        print(f"ERROR: golden baseline absent ({golden_root}).")
-        print("Regenerate requires a golden/ baseline (workflow-bootstrap).")
-        print("The copilot flavor has no golden tree and cannot be regenerated.")
+    golden_root = _resolve_golden_root(root)
+    if golden_root is None or not golden_root.exists():
+        print("ERROR: golden baseline unavailable.")
+        print("Regenerate requires a generated golden baseline — run "
+              "grm-workflow-bootstrap to freeze one, or provide a claude-code/ flavor.")
+        print("The copilot flavor has no golden baseline and cannot be regenerated.")
         return 2
 
     manifest = load_manifest(root)
@@ -674,7 +701,7 @@ def _build_fixture(base: Path) -> Path:
     """Create a throwaway repo fixture with a golden tree + framework + project
     files. Returns the repo root. Never touches the real repo."""
     root = base / "repo"
-    golden = root / GOLDEN_REL
+    golden = root / GOLDEN_CACHE_REL
     (golden / "hooks").mkdir(parents=True)
     (golden / "skills" / "demo-skill").mkdir(parents=True)
     (golden / "docs").mkdir(parents=True)
@@ -904,7 +931,7 @@ def _snapshot(root: Path) -> dict[str, bytes]:
         if not p.is_file():
             continue
         rel = p.relative_to(root).as_posix()
-        if rel.startswith(ARCHIVE_DIR + "/") or rel.startswith(GOLDEN_REL):
+        if rel.startswith(ARCHIVE_DIR + "/") or rel.startswith(GOLDEN_CACHE_PREFIX):
             continue
         out[rel] = p.read_bytes()
     return out

@@ -185,14 +185,22 @@ def build_worklist(root, mode="earliest-unverified", window_size=1, release=None
     selected = []
     for r in targets:
         ver = r["version"]
-        # v3.41 "Clean-Room" CR-2 relocated historical plans to docs/grimoire/;
-        # the active in-flight plan stays at the top-level docs/ path. Prefer the
-        # relocated location, fall back to top-level so both resolve.
-        planning_rel = os.path.join("docs", "grimoire", "release-planning-%s.md" % ver)
-        planning_text = _read(os.path.join(root, planning_rel))
-        if planning_text is None:
-            planning_rel = os.path.join("docs", "release-planning-%s.md" % ver)
-            planning_text = _read(os.path.join(root, planning_rel))
+        # v3.45 "Release-planning relocation" consolidated all plans under the
+        # docs/release-planning/ tier (active at dir root, archive under archived/).
+        # Try the new locations first, then the two pre-v3.45 paths (docs/grimoire/
+        # archive + top-level active) for backward-compat — the first that resolves wins.
+        planning_rel = None
+        planning_text = None
+        for cand in (
+            os.path.join("docs", "release-planning", "release-planning-%s.md" % ver),
+            os.path.join("docs", "release-planning", "archived", "release-planning-%s.md" % ver),
+            os.path.join("docs", "grimoire", "release-planning-%s.md" % ver),
+            os.path.join("docs", "release-planning-%s.md" % ver),
+        ):
+            planning_text = _read(os.path.join(root, cand))
+            if planning_text is not None:
+                planning_rel = cand
+                break
         if planning_text is not None:
             sources_read.append(planning_rel)
         else:

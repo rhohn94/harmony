@@ -106,6 +106,9 @@ MANIFEST_EXCLUDED_PREFIXES = (
     "docs/grimoire/execution-profile-spike-s1.md",
     "docs/grimoire/token-efficiency-",
     "docs/grimoire/release-planning-",
+    # v3.45: release-planning docs relocated to a dedicated tier (active at dir
+    # root, archive under archived/). Old prefixes kept for backward-compat.
+    "docs/release-planning/",
 )
 
 # v1.29 context-efficiency budgets (bytes).
@@ -310,7 +313,7 @@ DOCS_PARITY_ALLOW = frozenset({
 })
 
 # Release-planning archive pattern: root-only, auto-matched by regex.
-_RELEASE_PLAN_RE = re.compile(r"^docs/(grimoire/)?release-planning-v[\d.]+\.md$")
+_RELEASE_PLAN_RE = re.compile(r"^docs/(release-planning/(archived/)?|grimoire/)?release-planning-v[\d.]+\.md$")
 
 # ── lean-index (check 9) constants ─────────────────────────────────────
 LEAN_INDEX_SIZE_CAP  = 6_144   # 6 KB — individual index page budget
@@ -356,7 +359,7 @@ MONOLITH_CAP_EXEMPT = frozenset({
     "docs/grimoire/integration-workflow.md",
 })
 # release-planning archives (root-only, always exempt from monolith cap)
-_MONOLITH_CAP_RELEASE_PLAN_RE = re.compile(r"^docs/(grimoire/)?release-planning-v[\d.]+\.md$")
+_MONOLITH_CAP_RELEASE_PLAN_RE = re.compile(r"^docs/(release-planning/(archived/)?|grimoire/)?release-planning-v[\d.]+\.md$")
 
 
 def _docs_filenames(root, flavor_root):
@@ -589,7 +592,7 @@ def check_shipped_pointers(root):
         for p in glob.glob(f"{docs_dir}/**/*.md", recursive=True):
             # Source surface excludes the docs/grimoire/** subtree (never ships).
             src_rel = os.path.relpath(p, flavor_root).replace(os.sep, "/")
-            if src_rel.startswith("docs/grimoire/"):
+            if src_rel.startswith(("docs/grimoire/", "docs/release-planning/")):
                 continue
             base = os.path.dirname(p)
             for m in LINK_RE.finditer(_strip_code(open(p).read())):

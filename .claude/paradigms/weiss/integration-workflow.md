@@ -15,7 +15,7 @@ map between them.
    Do not lock anything until the user has resolved each question.
 2. **Lock scope** — `grm-release-agreement` skill. Present the report to the user;
    walk through each open item; wait for the user to say "agree" or "lock" for
-   each. Only then freeze into `docs/release-planning-v{X.Y}.md` and create
+   each. Only then freeze into `docs/release-planning/release-planning-v{X.Y}.md` and create
    the `version/{X.Y}` integration branch.
 3. **Distribute work** — `grm-release-phase` skill. Present the dependency graph
    and model assignments. **Spawn one item at a time** — each with an explicit

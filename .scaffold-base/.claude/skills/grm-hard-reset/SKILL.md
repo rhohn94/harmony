@@ -50,14 +50,19 @@ drift.
 
 **FRAMEWORK** (restore to pristine; archive first only if customised):
 
+The restore source is the **resolved golden tree** — generated on demand by
+`generate_golden.py` (v3.49), not a committed `golden/` directory. Resolve it
+once with `generate_golden.py --ensure-tree .` (→ `.grimoire-golden/tree/`,
+written `<golden>` below); all paths restore from there.
+
 | Path / glob | Source of truth |
 |---|---|
-| `.claude/skills/**` (all skills in `manifest.md`) | golden `golden/skills/` |
-| `.claude/hooks/*.sh` | golden `golden/hooks/` |
-| `.claude/settings.json` | golden `golden/settings.json` |
-| `.claude/push-allowlist` | golden `golden/push-allowlist` |
-| `.claude/workflows/*.js` | golden `golden/workflows/` |
-| `.claude/paradigms/{supervised,weiss,noir}/**` | golden `golden/paradigms/` |
+| `.claude/skills/**` (all skills in `manifest.md`) | `<golden>/skills/` |
+| `.claude/hooks/*.sh` | `<golden>/hooks/` |
+| `.claude/settings.json` | `<golden>/settings.json` |
+| `.claude/push-allowlist` | `<golden>/push-allowlist` |
+| `.claude/workflows/*.js` | `<golden>/workflows/` |
+| `.claude/paradigms/{supervised,weiss,noir}/**` | `<golden>/paradigms/` |
 | `.claude/grimoire-config.json` | regenerated — Step 6 |
 | `docs/design/README.md` (template index) | golden / template |
 | `docs/coding-standards.md`, `docs/architecture-guidelines.md`, `docs/grimoire/integration-workflow.md`, `docs/grimoire/version-design.md`, `docs/quickstart.md`, `docs/features.md` | scaffold template copies |
@@ -68,7 +73,7 @@ drift.
 |---|---|
 | `docs/roadmap.md` | archive → reset to template placeholder |
 | `docs/version-history.md` | archive → reset to empty template |
-| `docs/release-planning-v*.md` | archive → remove |
+| `docs/release-planning/release-planning-v*.md` | archive → remove |
 | `docs/design/*-design.md` (except `README.md`) | archive → remove |
 | `docs/design/ux/**` | archive → remove |
 | `ux-demo/**` | archive → remove |

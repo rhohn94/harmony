@@ -66,6 +66,7 @@ from __future__ import annotations
 import argparse
 import gzip
 import hashlib
+import importlib.util
 import io
 import json
 import os
@@ -151,10 +152,18 @@ EXCLUDED_PATH_PREFIXES = (
     #    docs/release-planning- prefix keeps the active plan from leaking while it
     #    stays where the tooling expects it.
     "docs/release-planning-",                       # top-level active plan (never ships)
+    # ── v3.45 "Release-planning relocation": all plans now live under a dedicated
+    #    docs/release-planning/ tier (active at dir root, archive under archived/).
+    #    The two prefixes above are kept for backward-compat with un-migrated trees.
+    "docs/release-planning/",                       # relocated tier (active + archive)
     # ── version-history (exclude-and-seed, clean-room-design §4 / v3.39 §2):
     #    Grimoire's own release log never ships; consumers get the empty seed
     #    template from golden instead.
     "docs/version-history.md",
+    # ── generated-golden cache (v3.49): the golden image is derived at
+    #    release/bootstrap time, never committed. Its local cache must never leak
+    #    into a flavor zip. Kept synchronized with sync-from-upstream.sh is_excluded().
+    ".grimoire-golden/",
 )
 
 # Fixed metadata for reproducible archives (no real mtimes / host permissions).
@@ -327,6 +336,34 @@ class DistributableBuilder:
                 gz.write(raw.getvalue())
         return out_path
 
+    # ── golden image (v3.49) ─────────────────────────────────────────────────
+    def golden_name(self) -> str:
+        """Filename of the versioned golden-image archive for this channel."""
+        return f"golden-v{self.version}{self._channel_suffix()}.tar.gz"
+
+    def build_golden(self) -> Path:
+        """Generate the versioned golden-image archive from the canonical flavor.
+
+        The golden image is the pristine reference set consumers restore/audit
+        against. It is **derived** (no longer a committed tree) by
+        grm-workflow-bootstrap's generate_golden helper and published as a release
+        asset so downstreams can pin it by version. Deterministic (fixed-mtime
+        gzip) like the other assets.
+        """
+        flavor_dir = self.root / CANONICAL_FLAVOR
+        gen_path = flavor_dir / ".claude/skills/grm-workflow-bootstrap/generate_golden.py"
+        if not gen_path.is_file():
+            raise ValueError(f"generate_golden helper not found at {gen_path}")
+        spec = importlib.util.spec_from_file_location("generate_golden", gen_path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        seed = flavor_dir / ".claude/skills/grm-workflow-bootstrap/seed"
+        gen = mod.GoldenGenerator(flavor_dir, seed if seed.is_dir() else None)
+        self.out_dir.mkdir(parents=True, exist_ok=True)
+        out_path = self.out_dir / self.golden_name()
+        gen.write_archive(out_path)
+        return out_path
+
     def build_all(self, flavors=None):
         """Build the requested (or all) flavors + the canonical assets, then sign.
 
@@ -347,14 +384,15 @@ class DistributableBuilder:
                 )
         archives = [self.build_flavor(name) for name in flavors]
         tarball = self.build_tarball()
+        golden = self.build_golden()
         # All published top-level assets EXCEPT release.json (which records their
         # hashes) and SHA256SUMS (which is computed over them). Hash each one once
         # and feed the same list to both integrity surfaces so they can't drift.
-        published = archives + [tarball]
+        published = archives + [tarball, golden]
         asset_entries = [self._asset_entry(p) for p in published]
         json_path = self.write_release_json(tarball, asset_entries)
         sums_path = self.write_checksums(published + [json_path])
-        outputs = archives + [tarball, json_path, sums_path]
+        outputs = archives + [tarball, golden, json_path, sums_path]
         sig_path = self.sign_checksums(sums_path)
         if sig_path is not None:
             outputs.append(sig_path)
@@ -558,6 +596,13 @@ def _self_test() -> int:
             (d / "docs" / "version-history.md").write_text("# log\n")                       # excluded (exclude-and-seed)
             (d / "docs" / "design").mkdir(parents=True)
             (d / "docs" / "design" / "bar-design.md").write_text("# bar\n")                 # KEPT (project-own)
+        # generate_golden helper for build_golden() — copy the real module into the
+        # canonical flavor so the golden-asset path is exercised against the actual
+        # generator (the build derives golden from CANONICAL_FLAVOR).
+        _real_gen = Path(__file__).resolve().parent.parent / "grm-workflow-bootstrap" / "generate_golden.py"
+        _gen_dst = root / CANONICAL_FLAVOR / ".claude" / "skills" / "grm-workflow-bootstrap"
+        _gen_dst.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(_real_gen, _gen_dst / "generate_golden.py")
         (root / "not-a-flavor").mkdir()
         (root / "not-a-flavor" / "f.txt").write_text("x")
 
@@ -593,6 +638,8 @@ def _self_test() -> int:
         check(len([p for p in paths1 if p.name.endswith(".zip")]) == 2, "two archives built")
         check(f"grimoire-{CANONICAL_FLAVOR}-v9.9.zip" in out_names1, "stable archive naming (no suffix)")
         check("grimoire-v9.9.tar.gz" in out_names1, "canonical tarball naming (stable, no suffix)")
+        check(b.golden_name() == "golden-v9.9.tar.gz", "golden archive naming (stable, no suffix)")
+        check("golden-v9.9.tar.gz" in out_names1, "golden image asset emitted")
         check(RELEASE_JSON_NAME in out_names1, "release.json emitted")
         check(CHECKSUMS_NAME in out_names1, "SHA256SUMS always emitted")
         check("RELEASE-META.json" not in out_names1, "RELEASE-META.json no longer emitted")

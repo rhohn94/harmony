@@ -103,7 +103,7 @@ git diff version/{X.Y}...{branch}
 
 Verify:
 - Scope: within the files listed in §2.{N}.
-- No edits to `docs/release-planning-v{X.Y}.md` §§1–4.
+- No edits to `docs/release-planning/release-planning-v{X.Y}.md` §§1–4.
 - No obvious regressions.
 
 If scope creep or a §§1–4 edit is found: stop and surface to the user.
@@ -188,7 +188,7 @@ of the release closeout. Response policy based on findings:
 ### 4. Tick §5 ledger
 
 ```bash
-git add docs/release-planning-v{X.Y}.md
+git add docs/release-planning/release-planning-v{X.Y}.md
 git commit -m "docs(release-v{X.Y}): tick §5 — {branch} merged ({short-sha})"
 ```
 

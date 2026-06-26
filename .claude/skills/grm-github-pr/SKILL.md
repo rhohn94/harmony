@@ -38,7 +38,7 @@ follows `boundary`.
 2. **Open the PR (idempotent).**
    ```
    python3 .claude/skills/grm-github-pr/github_pr.py open \
-       --base dev --head version/{X.Y} --plan docs/release-planning-v{X.Y}.md
+       --base dev --head version/{X.Y} --plan docs/release-planning/release-planning-v{X.Y}.md
    ```
    Reuses an open PR for the same head→base; otherwise creates one with a
    title/body built from the release plan. Emits the PR number + URL as JSON. If

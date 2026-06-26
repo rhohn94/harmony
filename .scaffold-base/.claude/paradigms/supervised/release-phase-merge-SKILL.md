@@ -78,7 +78,7 @@ Spot-check for:
 - Scope creep (changes outside the files listed in §2.{N})
 - Missing tests for new public functions
 - `TODO` / `FIXME` left in non-test code
-- Any edits to `docs/release-planning-v{X.Y}.md` — flag and reject if found
+- Any edits to `docs/release-planning/release-planning-v{X.Y}.md` — flag and reject if found
   in §§1–4
 
 If the diff looks wrong, stop and ask the user before merging.
@@ -118,7 +118,7 @@ If tests fail: do **not** tick ☑ Merged. Instead:
 
 ### 5. Tick §5 ledger
 
-Edit the branch's row in `docs/release-planning-v{X.Y}.md §5`:
+Edit the branch's row in `docs/release-planning/release-planning-v{X.Y}.md §5`:
 - Tick ☑ Merged
 - Append the merge commit SHA: `☑ \`{short-sha}\``
 
@@ -126,7 +126,7 @@ This edit is in §5, so the `release-plan-guard` hook allows it.
 
 Commit the ledger update immediately:
 ```bash
-git add docs/release-planning-v{X.Y}.md
+git add docs/release-planning/release-planning-v{X.Y}.md
 git commit -m "docs(release-v{X.Y}): tick §5 — {branch} merged ({short-sha})"
 ```
 

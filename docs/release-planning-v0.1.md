@@ -231,7 +231,7 @@ Deferred to **v0.2** (see roadmap): ScreenScraper metadata (user API key); deepe
 | `work/w18-smoke` (W18) | ☑ | ☑ | ☑ | ☑ |
 | `work/w19-depchannel` (W19) | ☑ | ☑ | ☑ | ☑ |
 | `work/w20-readme` (W20) | ☑ | ☑ | ☑ | ☑ |
-| `work/w21-release` (W21) | ☐ | ☐ | ☐ | ☐ |
+| `work/w21-release` (W21) | ☑ | ☑ | ☑ | ☑ |
 
 ### Follow-ups discovered during implementation
 

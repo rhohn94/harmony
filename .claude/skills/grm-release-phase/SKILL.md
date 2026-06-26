@@ -37,7 +37,7 @@ and `docs/design/release-phase-model-design.md`.
 ## Step 1 — Locate the active plan and current phase
 
 ```bash
-ls docs/release-planning-v*.md
+ls docs/release-planning/release-planning-v*.md
 ```
 
 Pick the highest-version file with `status: agreed` (check first 15 lines).
@@ -180,7 +180,7 @@ the Noir ceiling.
 
 **Flag contract:**
 
-- **Where declared:** in `docs/release-planning-v{X.Y}.md`, on the item's
+- **Where declared:** in `docs/release-planning/release-planning-v{X.Y}.md`, on the item's
   §2.{N} entry and/or its §5 ledger row, as the literal token `opus-required`
   (e.g. an `opus-required: yes` field, or `opus-required` in the item's flags
   list). `grm-release-planning` / `grm-release-agreement` may set it when an item is
@@ -319,7 +319,7 @@ constraints. Identical across the batch. Read this first; it saves you the cold
 re-read of the shared files. You still read your own §2.{N} scope below in full.}
 
 ### Context — read before touching code
-- docs/release-planning-v{X.Y}.md §2.{N} — this item's scope + acceptance
+- docs/release-planning/release-planning-v{X.Y}.md §2.{N} — this item's scope + acceptance
 - docs/design/{feature}-design.md — full feature design
 - docs/coding-standards.md and docs/architecture-guidelines.md — standing rules
 - {any other design doc cross-linked in the plan}
@@ -330,7 +330,7 @@ Include acceptance criteria verbatim.}
 
 ### Constraints
 - Scope strictly to the files listed in §2.{N}. Do not touch
-  docs/release-planning-v{X.Y}.md.
+  docs/release-planning/release-planning-v{X.Y}.md.
 - Write or extend the design doc for this item if §2.{N} flags one missing.
 - Run `{test-command}` and `{build-command}` before finishing.
 - Fix all errors and warnings introduced by your changes.

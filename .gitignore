@@ -19,6 +19,13 @@
 # Pristine generation-source folder (populated at bootstrap/sync time; not committed)
 .grimoire-source/
 
+# Generated golden image cache (produced on demand by generate_golden.py; not committed)
+.grimoire-golden/
+
+# Python bytecode cache (never commit .pyc or __pycache__)
+**/__pycache__/
+**/*.pyc
+
 # Transient sync-deps staging dir (cleaned per run)
 .sync-deps-staging/
 
