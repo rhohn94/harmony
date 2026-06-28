@@ -59,13 +59,13 @@ merge.
 | W101 — broadened core catalog | version/0.10 (in-session) | ☑ | `SYSTEM_CORES` → 20 systems / 40 pairs; every core verified against the live arm64 buildbot index (195 cores). |
 | W102 — scan recognizes new systems | version/0.10 (in-session) | ☑ | `mapper.rs` reimplemented over one `SYSTEMS` table; 16 scan-mapped systems with unambiguous extensions; uniqueness guarded. |
 | W103 — consistency + discoverability | version/0.10 (in-session) | ☑ | `default_cores_match_catalog` test pins the two tables; mock broadened; cores screen + filter pick up new systems automatically (verified via visual-inspect). |
-| W104 — verify | version/0.10 (in-session) | ☑ | 204 Rust tests, 62 JS tests, typecheck, lint, clippy, build, visual-inspect (12 systems shown), 4/4 real-gesture checks — all green. |
+| W104 — verify | version/0.10 (in-session) | ☑ | 199 Rust tests, 62 JS tests, typecheck, lint, clippy, build, visual-inspect (12 systems shown), 4/4 real-gesture checks — all green. |
 
 **Release rows**
 
 | Step | Status | Notes |
 |---|---|---|
-| version/0.10 → dev | ☐ | |
-| dev → main promoted + tagged v0.10 | ☐ | |
-| deployed | ☐ | |
-| pushed to origin | ☐ | full standing session authority granted |
+| version/0.10 → dev | ☑ | merged `--no-ff`; 199 Rust + 62 JS tests green on dev |
+| dev → main promoted + tagged v0.10 | ☑ | |
+| deployed | ☑ | /Applications/Harmony.app + deployed-apps/current at 0.10.0 |
+| pushed to origin | ☑ | main + dev + tag v0.10 (fast-forward, no force) |

@@ -239,6 +239,31 @@ Plan: [`release-planning-v0.9.md`](release-planning-v0.9.md) · Design:
 
 ---
 
+## v0.10 — Lineage
+
+**Theme:** Expand the default console list from NES/SNES/N64 to all home consoles
+of generations 1–6, so discovery, scanning, the core catalog, and filtering
+cover the classic era.
+
+- **Catalog:** `system_map.rs` curates 20 systems (gen 2–6 home consoles + the
+  original three) with ≥1 libretro core each — every core id verified against the
+  live arm64 buildbot index (195 cores), so downloads never 404. Gen 1
+  dedicated/Pong consoles and the original Xbox are documented omissions (no
+  ROM/core path).
+- **Scan:** `mapper.rs` reimplemented over a single `SYSTEMS` table; adds the
+  **unambiguous** ROM extensions for the new cartridge systems (+ Dreamcast/
+  GameCube). Ambiguous CD container formats (`.cue`/`.chd`/…) stay discoverable
+  in the catalog but are not auto-scanned. A test pins each scan default core to
+  the catalog's recommended core.
+- **Frontend:** no change needed — the Cores screen and library console filter
+  derive systems from the data and pick up the new consoles automatically.
+
+Closes [#7](https://github.com/rhohn94/harmony/issues/7) · Plan:
+[`release-planning-v0.10.md`](release-planning-v0.10.md) · Design:
+[`console-catalog-design.md`](design/console-catalog-design.md).
+
+---
+
 ## Backlog
 
 Deferred until after the GUI-and-cores program (v0.2–v0.7):
