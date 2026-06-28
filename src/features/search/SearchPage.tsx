@@ -241,7 +241,7 @@ export function SearchPage() {
   const [running, setRunning] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [dialog, setDialog] = useState<DialogState>({ open: false });
-  const queryRef = useRef<HTMLElement>(null);
+  const queryRef = useRef<HTMLInputElement>(null);
 
   // Load providers on mount.
   useEffect(() => {
@@ -333,19 +333,18 @@ export function SearchPage() {
 
       {/* Query + run */}
       <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-        <AuraField
-          ref={queryRef}
-          name="search-query"
-          type="search"
-          value={query}
-          placeholder="Search…"
-          style={{ flex: 1 }}
-          events={{
-            "aura-field:input": (e) =>
-              setQuery((e as CustomEvent<{ value: string }>).detail.value),
-          }}
-          onKeyDown={handleQueryKey as unknown as React.EventHandler<React.SyntheticEvent>}
-        />
+        <AuraField style={{ flex: 1 }}>
+          <input
+            ref={queryRef}
+            name="search-query"
+            className="harmony-input"
+            type="search"
+            value={query}
+            placeholder="Search…"
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleQueryKey}
+          />
+        </AuraField>
         <AuraButton
           variant="primary"
           onClick={handleSearch}

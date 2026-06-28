@@ -11,11 +11,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "../../ipc/invoke";
-import {
-  AuraButton,
-  AuraField,
-  AuraSelect,
-} from "@aura/react";
+import { AuraButton, AuraField } from "@aura/react";
 
 import {
   addContentFolder,
@@ -156,7 +152,7 @@ function FoldersPane() {
             if (e.key === "Enter") void handleAdd();
           }}
         />
-        <AuraButton tabIndex={0} events={{ "aura-click": () => { void handleAdd(); } }}>
+        <AuraButton tabIndex={0} onClick={() => { void handleAdd(); }}>
           Add Folder
         </AuraButton>
       </div>
@@ -177,7 +173,7 @@ function FoldersPane() {
             <AuraButton
               tabIndex={0}
               variant="secondary"
-              events={{ "aura-click": () => setShowCreate(true) }}
+              onClick={() => setShowCreate(true)}
             >
               Create a games folder for me
             </AuraButton>
@@ -200,14 +196,14 @@ function FoldersPane() {
               tabIndex={0}
               variant="secondary"
               disabled={scanning === f.id}
-              events={{ "aura-click": () => { void handleScan(f.id); } }}
+              onClick={() => { void handleScan(f.id); }}
             >
               {scanning === f.id ? "Scanning…" : "Rescan"}
             </AuraButton>
             <AuraButton
               tabIndex={0}
               variant="ghost"
-              events={{ "aura-click": () => { void handleRemove(f.id); } }}
+              onClick={() => { void handleRemove(f.id); }}
             >
               Remove
             </AuraButton>
@@ -306,14 +302,14 @@ function CoresPane() {
             >
               {system}
             </span>
-            <AuraSelect
+            <select
+              className="harmony-input"
+              style={{ maxWidth: 280 }}
               tabIndex={0}
               value={activeCore?.coreId ?? ""}
-              events={{
-                "aura-change": (e: CustomEvent) => {
-                  const val = (e.detail as { value?: string })?.value ?? (e.target as HTMLSelectElement)?.value;
-                  if (val) void handleSetActive(system, val);
-                },
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val) void handleSetActive(system, val);
               }}
             >
               {systemCores.map((c) => (
@@ -322,7 +318,7 @@ function CoresPane() {
                   {c.version ? ` (${c.version})` : ""}
                 </option>
               ))}
-            </AuraSelect>
+            </select>
           </div>
         );
       })}
@@ -434,7 +430,7 @@ function ProvidersPane() {
             onKeyDown={(e) => { if (e.key === "Enter") void handleAdd(); }}
             style={{ ...inputStyle, flex: 2 }}
           />
-          <AuraButton tabIndex={0} events={{ "aura-click": () => { void handleAdd(); } }}>
+          <AuraButton tabIndex={0} onClick={() => { void handleAdd(); }}>
             Add
           </AuraButton>
         </div>
@@ -472,14 +468,14 @@ function ProvidersPane() {
             <AuraButton
               tabIndex={0}
               variant={p.enabled ? "secondary" : "ghost"}
-              events={{ "aura-click": () => { void handleToggle(p); } }}
+              onClick={() => { void handleToggle(p); }}
             >
               {p.enabled ? "Enabled" : "Disabled"}
             </AuraButton>
             <AuraButton
               tabIndex={0}
               variant="ghost"
-              events={{ "aura-click": () => { void handleRemove(p.id); } }}
+              onClick={() => { void handleRemove(p.id); }}
             >
               Remove
             </AuraButton>
@@ -606,7 +602,7 @@ function FamiliarPane() {
         <AuraButton
           tabIndex={0}
           disabled={saving}
-          events={{ "aura-click": () => { void handleSave(); } }}
+          onClick={() => { void handleSave(); }}
         >
           {saving ? "Saving…" : "Save"}
         </AuraButton>
@@ -631,16 +627,14 @@ function AppearancePane() {
 
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
         <span style={{ fontSize: 14, minWidth: 60 }}>Theme</span>
-        <AuraSelect
+        <select
+          className="harmony-input"
+          style={{ maxWidth: 280 }}
           tabIndex={0}
           value={theme.className}
-          events={{
-            "aura-change": (e: CustomEvent) => {
-              const val =
-                (e.detail as { value?: string })?.value ??
-                (e.target as HTMLSelectElement)?.value;
-              if (val) setTheme(val);
-            },
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val) setTheme(val);
           }}
         >
           {themes.map((t) => (
@@ -648,7 +642,7 @@ function AppearancePane() {
               {t.label}
             </option>
           ))}
-        </AuraSelect>
+        </select>
       </div>
 
       <p style={{ margin: 0, fontSize: 13, color: "var(--aura-on-surface-muted)" }}>
@@ -747,7 +741,7 @@ function RetroArchPane() {
         <AuraButton
           tabIndex={0}
           disabled={saving}
-          events={{ "aura-click": () => { void handleSave(); } }}
+          onClick={() => { void handleSave(); }}
         >
           {saving ? "Saving…" : "Save"}
         </AuraButton>

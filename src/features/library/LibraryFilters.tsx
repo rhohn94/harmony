@@ -113,7 +113,7 @@ export function LibraryFilters({ facets, criteria, onChange }: LibraryFiltersPro
         {hasActiveFilters(criteria) && (
           <AuraButton
             variant="ghost"
-            events={{ "aura-click": () => onChange({ ...EMPTY_CRITERIA }) }}
+            onClick={() => onChange({ ...EMPTY_CRITERIA })}
           >
             Clear
           </AuraButton>

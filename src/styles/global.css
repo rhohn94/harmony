@@ -27,3 +27,31 @@ body,
 #root {
   min-height: 100vh;
 }
+
+/*
+ * Shared text-input surface (v0.9 "Contact"). Used for the contained native
+ * <input> inside <aura-field> wrappers and other free-text inputs, so every
+ * field shares one token-driven look instead of duplicating inline styles.
+ * Aura's <aura-field> only decorates a contained control — it renders no input
+ * of its own — so the real <input> lives in the markup and carries this class.
+ */
+.harmony-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--aura-space-2) var(--aura-space-3);
+  border-radius: var(--aura-radius-sm);
+  border: 1px solid var(--aura-border);
+  background: var(--aura-surface-2);
+  color: var(--aura-on-surface);
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+.harmony-input::placeholder {
+  color: var(--aura-on-surface-muted);
+}
+
+.harmony-input:focus-visible {
+  outline: var(--harmony-focus-ring);
+  outline-offset: 2px;
+}
