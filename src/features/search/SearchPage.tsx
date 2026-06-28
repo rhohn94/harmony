@@ -79,7 +79,7 @@ function EmptyState({ onAddProvider }: { onAddProvider: () => void }) {
           style={{
             fontFamily: "monospace",
             fontSize: 13,
-            background: "var(--aura-surface-raised, rgba(255,255,255,.08))",
+            background: "var(--aura-surface-raised)",
             padding: "1px 5px",
             borderRadius: 4,
           }}
@@ -126,14 +126,14 @@ function ResultRow({ result }: { result: SearchResult }) {
         }}
         onMouseEnter={(e) =>
           ((e.currentTarget as HTMLButtonElement).style.background =
-            "var(--aura-surface-raised, rgba(255,255,255,.07))")
+            "var(--aura-surface-raised)")
         }
         onMouseLeave={(e) =>
           ((e.currentTarget as HTMLButtonElement).style.background = "transparent")
         }
         onFocus={(e) =>
           ((e.currentTarget as HTMLButtonElement).style.background =
-            "var(--aura-surface-raised, rgba(255,255,255,.07))")
+            "var(--aura-surface-raised)")
         }
         onBlur={(e) =>
           ((e.currentTarget as HTMLButtonElement).style.background = "transparent")
@@ -185,12 +185,12 @@ function ProviderChip({
         borderRadius: 20,
         fontSize: 13,
         fontWeight: provider.enabled ? 600 : 400,
-        border: `1.5px solid ${provider.enabled ? "var(--aura-primary, #00c8ff)" : "var(--aura-on-surface-muted, rgba(255,255,255,.3))"}`,
+        border: `1.5px solid ${provider.enabled ? "var(--aura-primary)" : "var(--aura-on-surface-muted)"}`,
         background: provider.enabled
-          ? "rgba(0,200,255,.12)"
+          ? "var(--harmony-provider-enabled-bg)"
           : "transparent",
         color: provider.enabled
-          ? "var(--aura-primary, #00c8ff)"
+          ? "var(--aura-primary)"
           : "var(--aura-on-surface-muted)",
         transition: "all 0.12s",
       }}
@@ -396,7 +396,7 @@ export function SearchPage() {
 
       {/* Search error */}
       {searchError && (
-        <p style={{ margin: 0, color: "var(--aura-error, #e74c3c)", fontSize: 14 }}>
+        <p style={{ margin: 0, color: "var(--aura-error)", fontSize: 14 }}>
           Search failed: {searchError}
         </p>
       )}

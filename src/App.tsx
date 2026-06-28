@@ -15,11 +15,9 @@ import { isAppError, ping } from "./ipc/commands";
 import { HARMONY_ROUTES } from "./routes";
 import { ControllerProvider, HintBar } from "./features/controller";
 
-// Left inset reserves room for the native traffic-light controls so the top bar
-// content never renders under them (D2 §5: ~78x28pt controls → 72-80px inset).
-const TRAFFIC_LIGHT_INSET_PX = 80;
-const DRAG_STRIP_HEIGHT_PX = 36;
-const SIDEBAR_WIDTH_PX = 220;
+// Shell geometry (sidebar width, drag-strip height, the native traffic-light
+// inset — D2 §5) lives as `--harmony-*` tokens in theme/aura-theme.css so the
+// shell is token-driven like every other surface (v0.3 W32).
 
 /** IPC liveness chip — round-trips `ping` so the shell proves the seam works. */
 function IpcStatus() {
@@ -45,9 +43,9 @@ function IpcStatus() {
     <div
       className="harmony-panel"
       style={{
-        fontSize: 12,
-        padding: "6px 10px",
-        borderRadius: 8,
+        fontSize: "var(--harmony-font-chip)",
+        padding: "var(--harmony-chip-pad-sm)",
+        borderRadius: "var(--aura-radius-sm)",
         color: "var(--aura-on-surface-muted)",
       }}
       title="Backend IPC round-trip"
@@ -63,22 +61,29 @@ function Sidebar() {
     <nav
       className="harmony-sidebar"
       style={{
-        width: SIDEBAR_WIDTH_PX,
-        padding: 16,
+        width: "var(--harmony-sidebar-width)",
+        padding: "var(--aura-space-4)",
         display: "flex",
         flexDirection: "column",
-        gap: 4,
+        gap: "var(--aura-space-1)",
       }}
     >
-      <h1 style={{ fontSize: 18, margin: "4px 8px 16px" }}>Harmony</h1>
+      <h1
+        style={{
+          fontSize: "var(--harmony-font-title)",
+          margin: "var(--aura-space-1) var(--aura-space-2) var(--aura-space-4)",
+        }}
+      >
+        Harmony
+      </h1>
       {HARMONY_ROUTES.filter((r) => r.navLabel).map((r) => (
         <NavLink
           key={r.path}
           to={r.path}
           end={r.index}
           style={({ isActive }) => ({
-            padding: "8px 10px",
-            borderRadius: 8,
+            padding: "var(--aura-space-2) var(--harmony-space-2-5)",
+            borderRadius: "var(--aura-radius-sm)",
             textDecoration: "none",
             color: isActive
               ? "var(--aura-on-primary)"
@@ -110,17 +115,22 @@ function App() {
         <div
           data-tauri-drag-region
           style={{
-            height: DRAG_STRIP_HEIGHT_PX,
-            paddingLeft: TRAFFIC_LIGHT_INSET_PX,
+            height: "var(--harmony-drag-strip-height)",
+            paddingLeft: "var(--harmony-traffic-light-inset)",
             width: "100%",
           }}
         />
-        <div style={{ display: "flex", minHeight: `calc(100vh - ${DRAG_STRIP_HEIGHT_PX}px)` }}>
+        <div
+          style={{
+            display: "flex",
+            minHeight: "calc(100vh - var(--harmony-drag-strip-height))",
+          }}
+        >
           <Sidebar />
           <main
             style={{
               flex: 1,
-              padding: 24,
+              padding: "var(--aura-space-5)",
               overflow: "auto",
               display: "flex",
               flexDirection: "column",
