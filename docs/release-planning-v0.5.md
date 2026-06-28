@@ -70,6 +70,6 @@ follow). Each work item committed atomically; full gate suite before merge.
 
 | Step | Status | Notes |
 |---|---|---|
-| version/0.5 → dev | ☐ | |
-| dev → main promoted + tagged v0.5 | ☐ | |
+| version/0.5 → dev | ☑ | merged `--no-ff`; 190 Rust + 44 JS tests + visual-inspect green on dev |
+| dev → main promoted + tagged v0.5 | ☑ | |
 | pushed to origin | ☐ | HUMAN-GATED — do not push without explicit go |
