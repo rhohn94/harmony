@@ -9,14 +9,14 @@
 
 /* Focus ring for keyboard/controller nav on system list items. */
 .cores-page [role="option"]:focus-visible {
-  outline: var(--aura-focus-ring);
-  outline-offset: var(--aura-focus-ring-offset);
+  outline: var(--harmony-focus-ring);
+  outline-offset: var(--harmony-focus-ring-offset);
 }
 
 /* Focus ring on action buttons. */
 .cores-page aura-button:focus-visible {
-  outline: var(--aura-focus-ring);
-  outline-offset: var(--aura-focus-ring-offset);
+  outline: var(--harmony-focus-ring);
+  outline-offset: var(--harmony-focus-ring-offset);
 }
 
 /* Shelf row hover lift (pointer-optional affordance; does not break gamepad). */

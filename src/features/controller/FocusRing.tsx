@@ -10,9 +10,9 @@ import type { CSSProperties, ReactNode } from "react";
 export function focusRingStyle(focused: boolean): CSSProperties {
   return {
     borderRadius: 12,
-    outline: focused ? "2px solid var(--aura-focus, #34d2eb)" : "2px solid transparent",
+    outline: focused ? "2px solid var(--aura-focus)" : "2px solid transparent",
     outlineOffset: 2,
-    boxShadow: focused ? "0 0 0 4px color-mix(in oklch, var(--aura-focus, #34d2eb) 35%, transparent)" : "none",
+    boxShadow: focused ? "0 0 0 4px color-mix(in oklch, var(--aura-focus) 35%, transparent)" : "none",
     transition: "outline-color 120ms ease, box-shadow 120ms ease",
   };
 }
