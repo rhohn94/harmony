@@ -73,6 +73,6 @@ committed atomically; full gate suite before merge.
 
 | Step | Status | Notes |
 |---|---|---|
-| version/0.6 → dev | ☐ | |
-| dev → main promoted + tagged v0.6 | ☐ | |
+| version/0.6 → dev | ☑ | merged `--no-ff`; 194 Rust + 53 JS tests + visual-inspect green on dev |
+| dev → main promoted + tagged v0.6 | ☑ | |
 | pushed to origin | ☐ | HUMAN-GATED — do not push without explicit go |
