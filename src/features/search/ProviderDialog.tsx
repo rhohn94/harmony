@@ -44,7 +44,7 @@ export function ProviderDialog({
   const [name, setName] = useState(provider?.name ?? "");
   const [urlTemplate, setUrlTemplate] = useState(provider?.urlTemplate ?? "");
   const [error, setError] = useState<string | null>(null);
-  const nameRef = useRef<HTMLElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
 
   // Reset fields when the dialog opens or the provider changes.
   useEffect(() => {
@@ -60,7 +60,7 @@ export function ProviderDialog({
     if (open) {
       // Defer one frame so the dialog element has attached.
       const id = requestAnimationFrame(() => {
-        (nameRef.current as HTMLInputElement | null)?.focus();
+        nameRef.current?.focus();
       });
       return () => cancelAnimationFrame(id);
     }
@@ -106,32 +106,33 @@ export function ProviderDialog({
           <label style={{ fontSize: 12, color: "var(--aura-on-surface-muted)" }}>
             Name
           </label>
-          <AuraField
-            ref={nameRef}
-            name="provider-name"
-            type="text"
-            value={name}
-            placeholder="e.g. DuckDuckGo"
-            events={{
-              "aura-field:input": (e) => setName((e as CustomEvent<{ value: string }>).detail.value),
-            }}
-          />
+          <AuraField>
+            <input
+              ref={nameRef}
+              name="provider-name"
+              className="harmony-input"
+              type="text"
+              value={name}
+              placeholder="e.g. DuckDuckGo"
+              onChange={(e) => setName(e.target.value)}
+            />
+          </AuraField>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <label style={{ fontSize: 12, color: "var(--aura-on-surface-muted)" }}>
             URL Template <span style={{ opacity: 0.6 }}>(must contain &#123;query&#125;)</span>
           </label>
-          <AuraField
-            name="provider-url"
-            type="text"
-            value={urlTemplate}
-            placeholder="https://example.com/search?q={query}"
-            events={{
-              "aura-field:input": (e) =>
-                setUrlTemplate((e as CustomEvent<{ value: string }>).detail.value),
-            }}
-          />
+          <AuraField>
+            <input
+              name="provider-url"
+              className="harmony-input"
+              type="text"
+              value={urlTemplate}
+              placeholder="https://example.com/search?q={query}"
+              onChange={(e) => setUrlTemplate(e.target.value)}
+            />
+          </AuraField>
         </div>
 
         {error && (
