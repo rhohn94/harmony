@@ -313,6 +313,21 @@ Design: [`library-import-design.md`](design/library-import-design.md),
 
 ---
 
+## v0.13 — Reveal
+
+**Theme:** Make on-disk images actually appear.
+
+- **Asset protocol enabled:** cover art (`art-cache/`) and console photos
+  (`console-art/`) are cached to disk and referenced via Tauri's `asset:`
+  protocol (`convertFileSrc`), but the protocol was never enabled in
+  `tauri.conf.json`, so the webview blocked every image. v0.13 enables it with a
+  narrow scope (`$APPDATA/art-cache/**`, `$APPDATA/console-art/**`) so cover art
+  and console photos render. User-reported fix, verified in the running app.
+
+Plan: [`release-planning-v0.13.md`](release-planning-v0.13.md).
+
+---
+
 ## Backlog
 
 Deferred until after the GUI-and-cores program (v0.2–v0.7):
