@@ -96,6 +96,11 @@ impl Paths {
         self.subdir("blur-cache")
     }
 
+    /// `console-art/` dir (created) — v0.12 cached console photos from Wikipedia.
+    pub fn console_art_dir(&self) -> AppResult<PathBuf> {
+        self.subdir("console-art")
+    }
+
     /// `logs/` dir (created) — telemetry / run logs (§4.1).
     pub fn logs_dir(&self) -> AppResult<PathBuf> {
         self.subdir("logs")
@@ -108,6 +113,7 @@ impl Paths {
         self.cores_dir()?;
         self.art_cache_dir()?;
         self.blur_cache_dir()?;
+        self.console_art_dir()?;
         self.logs_dir()?;
         Ok(())
     }

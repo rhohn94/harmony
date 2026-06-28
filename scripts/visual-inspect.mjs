@@ -54,6 +54,8 @@ const REPORT_PATH = join(OUT_DIR, "report.json");
 // rendered text for the route to count as genuinely rendered (not just a shell).
 const ROUTES = [
   { name: "library", hash: "#/", expect: "Library" },
+  { name: "consoles", hash: "#/consoles", expect: "Consoles" },
+  { name: "console-detail", hash: "#/console/nes", expect: "known titles" },
   { name: "cores", hash: "#/cores", expect: "Cores" },
   { name: "search", hash: "#/search", expect: "Search" },
   { name: "settings", hash: "#/settings", expect: "Settings" },

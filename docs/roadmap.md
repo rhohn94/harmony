@@ -286,6 +286,33 @@ Closes [#6](https://github.com/rhohn94/harmony/issues/6) · Plan:
 
 ---
 
+## v0.12 — Curator
+
+**Theme:** Curate your library — add games directly, enrich them automatically,
+and explore the whole console landscape.
+
+- **Add a game (import):** drag-and-drop a ROM onto the window or pick it with the
+  native file dialog (`tauri-plugin-dialog`). Imported files are identified by
+  extension, copied into the managed Games directory (`<games_dir>/<system>/`),
+  registered, and made launchable — idempotent and never-clobbering.
+- **Auto-metadata on add:** each new game fetches cover art (libretro CDN) and a
+  Wikipedia summary + article URL (`games.description`, migration 005), surfaced on
+  the detail page with a manual "Refresh metadata" action. Best-effort — a miss
+  degrades silently.
+- **ROM-site download providers:** a curated set of emulator/ROM sites seeded as
+  `kind='download'` providers (migration 005), upholding the links-only contract
+  (Harmony constructs a `{query}` link and never downloads).
+- **By Console:** a new `/consoles` browse grid (generation-grouped, searchable,
+  with downloaded photos + Wikipedia descriptions) and a `/console/:key` detail
+  view showing your owned games plus the console's **entire** known game catalog —
+  ~28.6k titles across all 20 consoles, generated from the community
+  libretro-database datfiles (names only) and embedded in the binary.
+
+Design: [`library-import-design.md`](design/library-import-design.md),
+[`console-browse-design.md`](design/console-browse-design.md).
+
+---
+
 ## Backlog
 
 Deferred until after the GUI-and-cores program (v0.2–v0.7):

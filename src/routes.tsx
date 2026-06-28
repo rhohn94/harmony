@@ -7,6 +7,7 @@
 // render end-to-end now; later items swap the `element` for the real screen.
 
 import type { ReactElement } from "react";
+import { ConsoleDetailPage, ConsolesPage } from "./features/consoles"; // v0.12
 import { CoresPage } from "./features/cores"; // W16
 import { GameDetailPage, LibraryPage } from "./features/library"; // W13
 import { SearchPage } from "./features/search/SearchPage"; // W17
@@ -31,6 +32,15 @@ export const HARMONY_ROUTES: readonly HarmonyRoute[] = [
     index: true,
     navLabel: "Library",
     element: <LibraryPage />,
+  },
+  {
+    path: "/consoles",
+    navLabel: "Consoles",
+    element: <ConsolesPage />, // v0.12 — By Console browse
+  },
+  {
+    path: "/console/:key",
+    element: <ConsoleDetailPage />, // v0.12 — console detail (no nav entry)
   },
   {
     path: "/cores",

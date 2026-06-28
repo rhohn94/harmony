@@ -6,7 +6,7 @@
 use super::{map_sqlite, require_affected, require_found, Repository};
 use crate::db::Db;
 use crate::error::AppResult;
-use rusqlite::{params, Row};
+use rusqlite::{params, OptionalExtension, Row};
 
 /// A scanned content folder (`content_folders` row).
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
@@ -40,6 +40,10 @@ pub struct Game {
     pub publisher: Option<String>,
     /// Alternate titles as a JSON array string, if known (W61; nullable).
     pub aliases: Option<String>,
+    /// Wikipedia summary text, if fetched (v0.12 enrichment; nullable).
+    pub description: Option<String>,
+    /// Canonical Wikipedia article URL, if known (v0.12 enrichment; nullable).
+    pub wikipedia_url: Option<String>,
 }
 
 /// New-folder input (no id; assigned by SQLite).
@@ -110,6 +114,8 @@ fn map_game(row: &Row) -> rusqlite::Result<Game> {
         developer: row.get("developer")?,
         publisher: row.get("publisher")?,
         aliases: row.get("aliases")?,
+        description: row.get("description")?,
+        wikipedia_url: row.get("wikipedia_url")?,
     })
 }
 
@@ -137,6 +143,20 @@ impl LibraryRepo<'_> {
                 map_folder,
             )
             .map_err(require_found)
+        })
+    }
+
+    /// Fetch a folder by its exact path, or `None` if not registered. Uses the
+    /// `content_folders.path` UNIQUE index — O(log n), not a full scan.
+    pub fn get_folder_by_path(&self, path: &str) -> AppResult<Option<ContentFolder>> {
+        self.db.with_conn(|c| {
+            c.query_row(
+                "SELECT * FROM content_folders WHERE path = ?1",
+                params![path],
+                map_folder,
+            )
+            .optional()
+            .map_err(map_sqlite)
         })
     }
 
@@ -219,6 +239,31 @@ impl LibraryRepo<'_> {
         })
     }
 
+    /// Fetch a game by its exact stored path, or `None`. Uses the `games.path`
+    /// UNIQUE index — O(log n), not a full table scan.
+    pub fn get_game_by_path(&self, path: &str) -> AppResult<Option<Game>> {
+        self.db.with_conn(|c| {
+            c.query_row("SELECT * FROM games WHERE path = ?1", params![path], map_game)
+                .optional()
+                .map_err(map_sqlite)
+        })
+    }
+
+    /// Find a game already in the library by its content hash + system (the
+    /// import dedup key — re-importing the same ROM, even from a different
+    /// location or filename, resolves to the existing row). Uses `idx_games_crc32`.
+    pub fn find_game_by_hash(&self, crc32: &str, system: &str) -> AppResult<Option<Game>> {
+        self.db.with_conn(|c| {
+            c.query_row(
+                "SELECT * FROM games WHERE crc32 = ?1 AND system = ?2 LIMIT 1",
+                params![crc32, system],
+                map_game,
+            )
+            .optional()
+            .map_err(map_sqlite)
+        })
+    }
+
     /// List games, optionally filtered by system. `None` lists all.
     pub fn list_games(&self, system: Option<&str>) -> AppResult<Vec<Game>> {
         self.db.with_conn(|c| {
@@ -266,6 +311,26 @@ impl LibraryRepo<'_> {
                 .execute(
                     "UPDATE games SET clean_name = ?1 WHERE id = ?2",
                     params![clean_name, id],
+                )
+                .map_err(map_sqlite)?;
+            require_affected(n)
+        })
+    }
+
+    /// Persist Wikipedia-sourced enrichment (description + canonical article URL)
+    /// for a game. Either field may be `None` to leave/clear it. NotFound if the
+    /// game is absent. Art is set separately via [`Self::set_game_art`].
+    pub fn set_game_enrichment(
+        &self,
+        id: i64,
+        description: Option<&str>,
+        wikipedia_url: Option<&str>,
+    ) -> AppResult<()> {
+        self.db.with_conn(|c| {
+            let n = c
+                .execute(
+                    "UPDATE games SET description = ?1, wikipedia_url = ?2 WHERE id = ?3",
+                    params![description, wikipedia_url, id],
                 )
                 .map_err(map_sqlite)?;
             require_affected(n)
@@ -391,6 +456,56 @@ mod tests {
         assert!(got.developer.is_none());
         assert!(got.publisher.is_none());
         assert!(got.aliases.is_none());
+    }
+
+    #[test]
+    fn enrichment_round_trips() {
+        let db = Db::open_in_memory().unwrap();
+        let repo = LibraryRepo::new(&db);
+        let fid = repo.add_folder(&folder("/roms")).unwrap();
+        let gid = repo.add_game(&game(fid, "/roms/enrich.nes")).unwrap();
+        // A scanned game starts with no description.
+        assert!(repo.get_game(gid).unwrap().description.is_none());
+        repo.set_game_enrichment(
+            gid,
+            Some("A platformer about a plumber."),
+            Some("https://en.wikipedia.org/wiki/Super_Mario_Bros."),
+        )
+        .unwrap();
+        let got = repo.get_game(gid).unwrap();
+        assert_eq!(got.description.as_deref(), Some("A platformer about a plumber."));
+        assert_eq!(
+            got.wikipedia_url.as_deref(),
+            Some("https://en.wikipedia.org/wiki/Super_Mario_Bros.")
+        );
+    }
+
+    #[test]
+    fn set_enrichment_missing_game_is_not_found() {
+        let db = Db::open_in_memory().unwrap();
+        let repo = LibraryRepo::new(&db);
+        assert!(matches!(
+            repo.set_game_enrichment(999, Some("x"), None),
+            Err(AppError::NotFound(_))
+        ));
+    }
+
+    #[test]
+    fn lookup_by_path_and_hash() {
+        let db = Db::open_in_memory().unwrap();
+        let repo = LibraryRepo::new(&db);
+        let fid = repo.add_folder(&folder("/roms")).unwrap();
+        let gid = repo.add_game(&game(fid, "/roms/a.nes")).unwrap(); // crc deadbeef, nes
+        // by path
+        assert_eq!(repo.get_game_by_path("/roms/a.nes").unwrap().unwrap().id, gid);
+        assert!(repo.get_game_by_path("/roms/missing.nes").unwrap().is_none());
+        // by hash + system (the import dedup key)
+        assert_eq!(repo.find_game_by_hash("deadbeef", "nes").unwrap().unwrap().id, gid);
+        assert!(repo.find_game_by_hash("deadbeef", "snes").unwrap().is_none());
+        assert!(repo.find_game_by_hash("00000000", "nes").unwrap().is_none());
+        // folder by path
+        assert_eq!(repo.get_folder_by_path("/roms").unwrap().unwrap().id, fid);
+        assert!(repo.get_folder_by_path("/nope").unwrap().is_none());
     }
 
     #[test]

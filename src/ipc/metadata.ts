@@ -7,6 +7,7 @@
 // `get_cached_art` performs a local-only lookup — no network call.
 
 import { invoke } from "./invoke";
+import type { Game } from "./library";
 
 /**
  * Fetch boxart for a game from the libretro-thumbnails CDN.
@@ -29,4 +30,15 @@ export function fetchBoxart(gameId: number): Promise<string> {
  */
 export function getCachedArt(gameId: number): Promise<string | null> {
   return invoke<string | null>("get_cached_art", { gameId });
+}
+
+/**
+ * Auto-download relevant metadata for a game: cover art (libretro CDN) and a
+ * Wikipedia description + canonical article URL. Best-effort — a miss leaves the
+ * un-enriched fields untouched. Resolves to the (possibly updated) game so the
+ * caller can refresh in place. Invoked automatically after an import and on a
+ * manual "refresh metadata" action.
+ */
+export function enrichGameMetadata(gameId: number): Promise<Game> {
+  return invoke<Game>("enrich_game_metadata", { gameId });
 }

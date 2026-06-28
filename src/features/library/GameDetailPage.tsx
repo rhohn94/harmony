@@ -9,11 +9,12 @@
 // polling is W14). Panel uses --aura-panel-alpha so vibrancy reads through.
 
 import { AuraButton, AuraCard } from "@aura/react";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { motion } from "framer-motion";
 import { SPRING } from "../../lib/motion";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { fetchBoxart, getGame, launchGame } from "../../ipc/commands";
+import { enrichGameMetadata, fetchBoxart, getGame, launchGame } from "../../ipc/commands";
 import type { Game } from "../../ipc/commands";
 import { artUrl } from "./art";
 import { HeroBackdrop } from "./HeroBackdrop";
@@ -44,6 +45,7 @@ export function GameDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [launchError, setLaunchError] = useState<string | null>(null);
   const [artOverride, setArtOverride] = useState<string | null>(null);
+  const [enriching, setEnriching] = useState(false);
 
   const gameId = Number(id);
 
@@ -87,6 +89,19 @@ export function GameDetailPage() {
       })
       .catch(() => undefined);
   }, [game]);
+
+  // Auto-download cover art + a Wikipedia description, then refresh in place.
+  const onRefreshMetadata = useCallback(() => {
+    if (!game || enriching) return;
+    setEnriching(true);
+    void enrichGameMetadata(game.id)
+      .then((updated) => {
+        setGame(updated);
+        if (updated.artPath) setArtOverride(artUrl(updated.artPath));
+      })
+      .catch(() => undefined)
+      .finally(() => setEnriching(false));
+  }, [game, enriching]);
 
   if (error) {
     return (
@@ -144,6 +159,13 @@ export function GameDetailPage() {
               <AuraButton class="harmony-detail__play" onClick={onLaunch}>
                 ▶ Play
               </AuraButton>
+              <AuraButton
+                class="harmony-detail__secondary"
+                onClick={onRefreshMetadata}
+                disabled={enriching}
+              >
+                {enriching ? "Fetching metadata…" : "Refresh metadata"}
+              </AuraButton>
               <AuraButton class="harmony-detail__secondary" onClick={onGetArt}>
                 Get art
               </AuraButton>
@@ -159,6 +181,21 @@ export function GameDetailPage() {
 
             {launchError && (
               <AuraCard class="harmony-notice">Launch failed: {launchError}</AuraCard>
+            )}
+
+            {game.description && (
+              <div className="harmony-detail__about">
+                <p className="harmony-detail__desc">{game.description}</p>
+                {game.wikipediaUrl && (
+                  <button
+                    type="button"
+                    className="harmony-detail__wiki"
+                    onClick={() => void openUrl(game.wikipediaUrl!).catch(() => undefined)}
+                  >
+                    Read more on Wikipedia ↗
+                  </button>
+                )}
+              </div>
             )}
 
             <div className="harmony-detail__meta">

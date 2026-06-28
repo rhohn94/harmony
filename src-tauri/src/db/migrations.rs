@@ -35,6 +35,14 @@ const MIGRATIONS: &[Migration] = &[
         version: 4,
         sql: include_str!("migrations/004_search_provider_kind.sql"),
     },
+    Migration {
+        version: 5,
+        sql: include_str!("migrations/005_game_description_and_rom_providers.sql"),
+    },
+    Migration {
+        version: 6,
+        sql: include_str!("migrations/006_console_meta.sql"),
+    },
 ];
 
 /// Read the database's current schema version (`PRAGMA user_version`, default 0).
@@ -128,6 +136,61 @@ mod tests {
         for c in ["year", "developer", "publisher", "aliases"] {
             assert!(cols.iter().any(|x| x == c), "missing column {c}");
         }
+    }
+
+    #[test]
+    fn games_table_has_description_columns() {
+        let mut conn = Connection::open_in_memory().expect("open");
+        run(&mut conn).expect("migrate");
+        let cols: Vec<String> = conn
+            .prepare("PRAGMA table_info(games)")
+            .unwrap()
+            .query_map([], |r| r.get::<_, String>(1))
+            .unwrap()
+            .collect::<rusqlite::Result<Vec<_>>>()
+            .unwrap();
+        for c in ["description", "wikipedia_url"] {
+            assert!(cols.iter().any(|x| x == c), "missing column {c}");
+        }
+    }
+
+    #[test]
+    fn console_meta_table_exists() {
+        let mut conn = Connection::open_in_memory().expect("open");
+        run(&mut conn).expect("migrate");
+        let n: i64 = conn
+            .query_row(
+                "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='console_meta'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(n, 1, "console_meta table should exist after migration 006");
+    }
+
+    #[test]
+    fn rom_site_download_providers_are_seeded() {
+        let mut conn = Connection::open_in_memory().expect("open");
+        run(&mut conn).expect("migrate");
+        // v0.12: a curated set of ROM-site download providers is seeded (links only).
+        let downloads: i64 = conn
+            .query_row(
+                "SELECT count(*) FROM search_providers WHERE kind = 'download'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert!(downloads >= 6, "expected v0.11 + v0.12 download providers, got {downloads}");
+        // Every download provider is a link-only https {query} template.
+        let bad: i64 = conn
+            .query_row(
+                "SELECT count(*) FROM search_providers WHERE kind = 'download' \
+                 AND (url_template NOT LIKE 'https://%' OR url_template NOT LIKE '%{query}%')",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(bad, 0, "download providers must be https {{query}} links");
     }
 
     #[test]

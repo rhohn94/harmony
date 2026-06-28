@@ -45,6 +45,8 @@ pub fn run() {
     // --- W17: opener plugin — allows the frontend to open URLs in the system browser ---
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        // v0.12: native file picker for importing ROMs from the filesystem.
+        .plugin(tauri_plugin_dialog::init())
         .setup(harmony_setup);
 
     // The macro is the ONLY place the invoke_handler is assembled; domain items
