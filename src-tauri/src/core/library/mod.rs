@@ -14,6 +14,7 @@
 
 pub mod dat;
 pub mod hasher;
+pub mod import;
 pub mod ines;
 pub mod mapper;
 pub mod matcher;
@@ -22,6 +23,7 @@ pub mod walker;
 
 pub use dat::{DatEntry, DatIndex};
 pub use hasher::RomHashes;
+pub use import::{import_file, ImportOutcome};
 pub use mapper::{SystemMapping, SYSTEM_NES, SYSTEM_SNES, SYSTEM_N64};
 pub use matcher::{MatchOutcome, Matcher};
 pub use scan::{scan_folder_path, ScanReport};

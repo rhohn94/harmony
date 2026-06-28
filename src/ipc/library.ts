@@ -25,6 +25,22 @@ export interface Game {
   publisher: string | null;
   /** Alternate titles / popular aliases (empty when none). */
   aliases: string[];
+  /** Wikipedia summary text, if fetched (null until enrichment populates it). */
+  description: string | null;
+  /** Canonical Wikipedia article URL, if known. */
+  wikipediaUrl: string | null;
+}
+
+/** Per-file outcome of an import (mirrors Rust `ImportItemDto`). */
+export interface ImportItem {
+  /** The source path the user supplied. */
+  source: string;
+  /** Outcome: newly added, already present, wrong file type, or failed. */
+  status: "imported" | "exists" | "unsupported" | "error";
+  /** The resulting game (present for `imported` and `exists`). */
+  game: Game | null;
+  /** Human-readable detail for `unsupported` / `error`. */
+  message: string | null;
 }
 
 /** A configured content folder (mirrors Rust `ContentFolderDto`). */
@@ -77,6 +93,17 @@ export function listGames(system?: string): Promise<Game[]> {
 /** Fetch a single game by id. */
 export function getGame(id: number): Promise<Game> {
   return invoke<Game>("get_game", { id });
+}
+
+/**
+ * Import one or more ROM files into the library: each is identified by
+ * extension, copied into the configured Games directory, and registered.
+ * Returns a per-file result so the caller can report imported / already-present
+ * / unsupported / failed. Enrich each imported game separately via
+ * `enrichGameMetadata` for cover art + a Wikipedia description (v0.12).
+ */
+export function importGames(sources: string[]): Promise<ImportItem[]> {
+  return invoke<ImportItem[]>("import_games", { sources });
 }
 
 /**

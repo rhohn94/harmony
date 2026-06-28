@@ -318,4 +318,65 @@
     flex: 1;
     overflow-wrap: anywhere;
   }
+
+  /* ---- v0.12: import toolbar + drag-drop overlay ---- */
+  .harmony-library__toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--aura-space-3);
+    flex-wrap: wrap;
+  }
+  .harmony-library__hint {
+    font-size: 13px;
+  }
+  .harmony-library__note {
+    font-size: 13px;
+    color: var(--aura-primary);
+    font-weight: 600;
+  }
+  .harmony-dropzone {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--aura-surface) 60%, transparent);
+    pointer-events: none;
+  }
+  .harmony-dropzone__inner {
+    padding: var(--aura-space-5) var(--aura-space-6);
+    border: 2px dashed var(--aura-primary);
+    border-radius: var(--aura-radius-lg);
+    color: var(--aura-primary);
+    font-size: 20px;
+    font-weight: 700;
+    background: var(--aura-panel-alpha, var(--aura-surface-raised));
+  }
+
+  /* ---- v0.12: game description / Wikipedia link on the detail page ---- */
+  .harmony-detail__about {
+    margin-top: var(--aura-space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--aura-space-2);
+    max-width: 60ch;
+  }
+  .harmony-detail__desc {
+    margin: 0;
+    line-height: 1.5;
+    color: var(--aura-on-surface);
+  }
+  .harmony-detail__wiki {
+    align-self: flex-start;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--aura-primary);
+  }
+  .harmony-detail__wiki:hover {
+    text-decoration: underline;
+  }
 }
