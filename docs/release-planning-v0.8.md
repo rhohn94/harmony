@@ -55,8 +55,8 @@ merge.
 
 | Item | Branch | Status | Notes |
 |---|---|---|---|
-| W81 — success confirmation + reveal-in-Finder | version/0.8 (in-session) | ☐ | |
-| W82 — verify | version/0.8 (in-session) | ☐ | |
+| W81 — success confirmation + reveal-in-Finder | version/0.8 (in-session) | ☑ | `CreateGamesFolderDialog` no longer auto-closes on success — shows a "✓ Games folder ready" state with the created path, a `revealItemInDir` "Reveal in Finder" button (covered by `opener:default`), and Done; `onCreated` still fires so views refresh; reopening resets to the form. |
+| W82 — verify | version/0.8 (in-session) | ☑ | `scripts/inspect-create-success.mjs` drives the flow headlessly and captured the success state (path + Reveal-in-Finder confirmed); typecheck/lint/60 JS tests/cargo check/visual-inspect all green. |
 
 **Release rows**
 
