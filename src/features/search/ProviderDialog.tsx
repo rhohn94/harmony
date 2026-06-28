@@ -131,7 +131,7 @@ export function ProviderDialog({
         </div>
 
         {error && (
-          <p style={{ margin: 0, fontSize: 12, color: "var(--aura-error, #e74c3c)" }}>
+          <p style={{ margin: 0, fontSize: 12, color: "var(--aura-error)" }}>
             {error}
           </p>
         )}

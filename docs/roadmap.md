@@ -94,25 +94,45 @@ Plan: [`release-planning-v0.2.md`](release-planning-v0.2.md).
 
 ---
 
-## v0.3 – v0.7 — Full GUI & emulator cores (provisional)
+## v0.3 — Resonance
 
-**Theme:** With the app visible, complete and verify the GUI and the
-discover → download → configure → launch core lifecycle. Each release is
-re-planned against the working app.
+**Theme:** Adopt the Aura design language fully and drive the UI from design
+tokens rather than ad-hoc CSS.
 
-- **v0.3 — Library & shell:** real library grid, hero, navigation shell, game
-  detail — verified rendering with mock data.
-- **v0.4 — Core discovery & download:** cores screen, buildbot catalog, the
-  download → verify → install flow, per-system active-core selection — end-to-end.
-- **v0.5 — Scan & identification:** content-folder config, scan trigger +
-  progress, No-Intro matching results, unmatched-ROM handling.
-- **v0.6 — Launch & settings:** RetroArch locate/picker, launch flow, and the
-  full settings surface (folders, cores, controllers, search, RetroArch path).
-- **v0.7 — Controller & art:** spatial controller navigation + hints, box
-  art/thumbnail fetch + caching with graceful fallbacks, full controller
-  operability.
+- **Harmony token layer:** a `--harmony-*` set (geometry, typography scale,
+  off-scale spacing/radius, a shared focus ring) declared in the `harmony-theme`
+  cascade layer for the values Aura's own scale does not own.
+- **Token adoption:** the shell (`App.tsx`), `library.css`, `cores.css`, and the
+  screens all reference tokens; every `var(--aura-*, <literal>)` colour fallback
+  removed; `--aura-error` aliased to Aura's `--aura-danger` so the error colour
+  is theme-driven.
+- **Guard:** `scripts/token-adoption.test.mjs` fails the build if a colour
+  literal or bare hex returns; verified rendering unchanged vs v0.2.
 
-Plan: *(planned per release after v0.2)*
+Ticket [#1](https://github.com/rhohn94/harmony/issues/1) · Plan:
+[`release-planning-v0.3.md`](release-planning-v0.3.md).
+
+---
+
+## v0.4 – v0.7 — GUI & emulator cores (provisional)
+
+**Theme:** With a consistent token-driven UI, complete the experience and the
+discover → download → configure core lifecycle. Each release is re-planned
+against the working app.
+
+- **v0.4 — Fluid motion:** smooth, fluid animation for every transition and
+  event (route/page transitions, list entrance/reorder, micro-interactions),
+  honouring `prefers-reduced-motion`. Ticket [#2](https://github.com/rhohn94/harmony/issues/2).
+- **v0.5 — Games directory:** let Harmony offer to create a games directory for
+  the user (empty-state convenience, user-confirmed location, wired into the
+  scan plumbing). Ticket [#3](https://github.com/rhohn94/harmony/issues/3).
+- **v0.6 — Search & filtering:** built-in search providers (links-only) plus a
+  frontend filtering experience (console, year, developer, publisher, title,
+  popular aliases). Ticket [#4](https://github.com/rhohn94/harmony/issues/4).
+- **v0.7 — Core discovery:** browse/discover, search, and download + install for
+  emulator cores. Ticket [#5](https://github.com/rhohn94/harmony/issues/5).
+
+Plan: *(planned per release after v0.3)*
 
 ---
 

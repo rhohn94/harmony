@@ -130,7 +130,7 @@ function FoldersPane() {
       <h3 style={{ margin: 0 }}>Content Folders</h3>
 
       {error && (
-        <p style={{ color: "var(--aura-error, #f87171)", margin: 0, fontSize: 13 }}>
+        <p style={{ color: "var(--aura-error)", margin: 0, fontSize: 13 }}>
           {error}
         </p>
       )}
@@ -145,8 +145,8 @@ function FoldersPane() {
             flex: 1,
             padding: "8px 12px",
             borderRadius: 8,
-            border: "1px solid var(--aura-border, rgba(255,255,255,0.15))",
-            background: "var(--aura-surface-2, rgba(255,255,255,0.06))",
+            border: "1px solid var(--aura-border)",
+            background: "var(--aura-surface-2)",
             color: "var(--aura-on-surface)",
             fontSize: 14,
           }}
@@ -259,7 +259,7 @@ function CoresPane() {
       </p>
 
       {error && (
-        <p style={{ color: "var(--aura-error, #f87171)", margin: 0, fontSize: 13 }}>
+        <p style={{ color: "var(--aura-error)", margin: 0, fontSize: 13 }}>
           {error}
         </p>
       )}
@@ -387,7 +387,7 @@ function ProvidersPane() {
       </p>
 
       {error && (
-        <p style={{ color: "var(--aura-error, #f87171)", margin: 0, fontSize: 13 }}>
+        <p style={{ color: "var(--aura-error)", margin: 0, fontSize: 13 }}>
           {error}
         </p>
       )}
@@ -475,8 +475,8 @@ const inputStyle: React.CSSProperties = {
   flex: 1,
   padding: "8px 12px",
   borderRadius: 8,
-  border: "1px solid var(--aura-border, rgba(255,255,255,0.15))",
-  background: "var(--aura-surface-2, rgba(255,255,255,0.06))",
+  border: "1px solid var(--aura-border)",
+  background: "var(--aura-surface-2)",
   color: "var(--aura-on-surface)",
   fontSize: 13,
 };
@@ -556,7 +556,7 @@ function FamiliarPane() {
       )}
 
       {error && (
-        <p style={{ color: "var(--aura-error, #f87171)", margin: 0, fontSize: 13 }}>
+        <p style={{ color: "var(--aura-error)", margin: 0, fontSize: 13 }}>
           {error}
         </p>
       )}
@@ -649,11 +649,11 @@ function AppearancePane() {
               border:
                 theme.className === t.className
                   ? "2px solid var(--aura-primary)"
-                  : "2px solid var(--aura-border, rgba(255,255,255,0.15))",
+                  : "2px solid var(--aura-border)",
               background:
                 theme.className === t.className
                   ? "var(--aura-primary)"
-                  : "var(--aura-surface-2, rgba(255,255,255,0.06))",
+                  : "var(--aura-surface-2)",
               color:
                 theme.className === t.className
                   ? "var(--aura-on-primary)"
@@ -707,7 +707,7 @@ function RetroArchPane() {
       </p>
 
       {error && (
-        <p style={{ color: "var(--aura-error, #f87171)", margin: 0, fontSize: 13 }}>
+        <p style={{ color: "var(--aura-error)", margin: 0, fontSize: 13 }}>
           {error}
         </p>
       )}
@@ -784,7 +784,7 @@ export function SettingsPage() {
         minHeight: 480,
       }}
     >
-      <header style={{ padding: "16px 24px 12px", borderBottom: "1px solid var(--aura-border, rgba(255,255,255,0.08))" }}>
+      <header style={{ padding: "16px 24px 12px", borderBottom: "1px solid var(--aura-border)" }}>
         <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600 }}>Settings</h2>
       </header>
 
@@ -795,7 +795,7 @@ export function SettingsPage() {
           style={{
             width: 160,
             padding: "12px 8px",
-            borderRight: "1px solid var(--aura-border, rgba(255,255,255,0.08))",
+            borderRight: "1px solid var(--aura-border)",
             display: "flex",
             flexDirection: "column",
             gap: 2,
