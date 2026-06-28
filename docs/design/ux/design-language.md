@@ -169,6 +169,33 @@ theme class on `<html>` (e.g. `theme-harmony-noir`, a lighter
 `theme-harmony-dusk`). Each named theme re-declares the three brand knobs +
 surface tokens; nothing else changes. The select lives in Settings → Appearance.
 
+### 3.4 The Harmony token layer (v0.3 "Resonance")
+
+Beyond the brand knobs and surfaces, Harmony's screens are driven by a small set
+of `--harmony-*` tokens declared once at `:root` inside the `harmony-theme`
+cascade layer (`src/theme/aura-theme.css`). These cover the values Aura's own
+scale does not own, so components never hard-code a px/hex literal:
+
+- **Geometry** — `--harmony-sidebar-width`, `--harmony-drag-strip-height`,
+  `--harmony-traffic-light-inset`, hero/detail cover dimensions,
+  `--harmony-tile-min-width`, `--harmony-detail-label-width`.
+- **Off-scale spacing/radius** kept exact so v0.3 is visually identical to v0.2:
+  `--harmony-section-gap` (20px), `--harmony-space-2-5` (10px),
+  `--harmony-chip-pad` / `--harmony-chip-pad-sm`, `--harmony-radius-card` (10px),
+  `--harmony-radius-cover` (14px).
+- **Typography scale** — `--harmony-font-chip|caption|title|hero-title|detail-title`.
+- **Focus ring** — `--harmony-focus-ring` + `--harmony-focus-ring-offset`, the
+  single source shared by the library and cores screens.
+- **Semantic alias** — `--aura-error: var(--aura-danger)`. Aura ships
+  `--aura-danger`; Harmony's screens reference `--aura-error`, so the alias makes
+  the error colour theme-driven instead of a hard-coded hex fallback.
+
+**Rules.** Values that land exactly on Aura's 4px spacing scale or radius scale
+use the Aura token directly (`--aura-space-*`, `--aura-radius-*`); only off-scale
+values get a `--harmony-*` token. No `var(--aura-*, <literal>)` colour fallbacks
+remain — every token resolves to a declared value. The
+`scripts/token-adoption.test.mjs` guard enforces both invariants.
+
 ---
 
 ## 4. Anti-FOUC strategy

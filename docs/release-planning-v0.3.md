@@ -62,9 +62,16 @@ pass before merge.
 
 | Item | Branch | Status | Notes |
 |---|---|---|---|
-| W31 — token-layer scaffolding | version/0.3 (in-session) | ☐ | |
-| W32 — tokenize hard-coded values | version/0.3 (in-session) | ☐ | |
-| W33 — verified token adoption | version/0.3 (in-session) | ☐ | |
+| W31 — token-layer scaffolding | version/0.3 (in-session) | ☑ | Aura pin reconciled (vendor.lock SHA == checkout, no drift); `--harmony-*` geometry/typography/spacing/focus tokens + `--aura-error` alias added to `aura-theme.css`. |
+| W32 — tokenize hard-coded values | version/0.3 (in-session) | ☑ | Shell (`App.tsx`), `library.css`, `cores.css` token-driven; all 20 `var(--aura-*, <literal>)` colour fallbacks stripped; provider chip → `--harmony-provider-enabled-bg`. |
+| W33 — verified token adoption | version/0.3 (in-session) | ☑ | `scripts/token-adoption.test.mjs` (3 tests) guards no-fallback + no-bare-hex; visual-inspect verified=true guiOk=true on all 4 routes; rendering unchanged vs v0.2. |
+
+**Follow-ups (deferred)**
+
+- Residual **bare inline spacing** numbers in `SettingsPage.tsx` / `SearchPage.tsx`
+  inline `style={{}}` objects (e.g. `gap: 16`, `padding: 40`) were deferred —
+  layout-local, non-colour, deferred to avoid a fragile mass-edit. Convert to
+  tokens and extend the guard test in a later cleanup pass.
 
 **Release rows**
 
