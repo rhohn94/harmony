@@ -65,9 +65,9 @@ committed atomically; full gate suite before merge.
 
 | Item | Branch | Status | Notes |
 |---|---|---|---|
-| W61 — metadata columns + built-in providers | version/0.6 (in-session) | ☐ | |
-| W62 — multi-facet filtering experience | version/0.6 (in-session) | ☐ | |
-| W63 — verify | version/0.6 (in-session) | ☐ | |
+| W61 — metadata columns + built-in providers | version/0.6 (in-session) | ☑ | Migrations 002 (nullable year/developer/publisher/aliases on `games`) + 003 (seed MobyGames/IGDB/Wikipedia/GameFAQs, `INSERT OR IGNORE`); Game/NewGame/map_game/add_game, GameDto (aliases→`Vec<String>`), TS Game extended; migration + repo metadata tests; 194 Rust tests + clippy clean. |
+| W62 — multi-facet filtering experience | version/0.6 (in-session) | ☑ | Pure `filter.ts` (facetValues + filterGames, AND, title/alias query) + 9 unit tests; `LibraryFilters` bar (console pills + search + year/dev/pub selects, hidden when empty); LibraryPage distinguishes no-games vs no-matches. |
+| W63 — verify | version/0.6 (in-session) | ☑ | Mock fixtures carry metadata + seeded providers; mock-ipc guard updated for new keys; visual-inspect verified=true guiOk=true on 4 routes; filter bar confirmed in the library screenshot; 53 JS tests green. |
 
 **Release rows**
 
