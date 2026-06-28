@@ -63,9 +63,9 @@ full gate suite must pass before merge.
 
 | Item | Branch | Status | Notes |
 |---|---|---|---|
-| W41 — motion-token foundation + reduced-motion | version/0.4 (in-session) | ☐ | |
-| W42 — close the motion gaps | version/0.4 (in-session) | ☐ | |
-| W43 — verify motion | version/0.4 (in-session) | ☐ | |
+| W41 — motion-token foundation + reduced-motion | version/0.4 (in-session) | ☑ | `src/lib/motion.ts` (DUR/EASE/SPRING/variants) + `src/theme/motion.css` (tokens forwarding Aura primitives + global reduced-motion rule); `<MotionConfig reducedMotion="user">` wraps the app; existing motion refactored onto the presets. |
+| W42 — close the motion gaps | version/0.4 (in-session) | ☑ | Route crossfade (`AnimatePresence` keyed by pathname), library grid stagger (`GameTile` → `motion.button`), provider-dialog pop, sidebar-nav + tab + result-row transitions. |
+| W43 — verify motion | version/0.4 (in-session) | ☑ | `scripts/motion.test.mjs` (4 tests) guards no raw literals + both reduced-motion hooks + preset exports; visual-inspect verified=true guiOk=true on all 4 routes (motion wrappers don't blank the page); 44 tests green. |
 
 **Release rows**
 
