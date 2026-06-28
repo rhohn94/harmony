@@ -65,9 +65,9 @@ clippy, build, visual-inspect) must pass before merge.
 
 | Item | Branch | Status | Notes |
 |---|---|---|---|
-| W71 — broaden the catalog | version/0.7 (in-session) | ☐ | |
-| W72 — browse + search experience | version/0.7 (in-session) | ☐ | |
-| W73 — verify | version/0.7 (in-session) | ☐ | |
+| W71 — broaden the catalog | version/0.7 (in-session) | ☑ | `system_map.rs` expanded (nes 4 / snes 3 / n64 2 well-known libretro cores); recommended-default preserved; map + install tests updated; real download path unchanged. 194 Rust tests + clippy clean. |
+| W72 — browse + search experience | version/0.7 (in-session) | ☑ | Pure `coreFilter.ts` (flatten/filter/group) + 7 unit tests; `CoresPage` search box switches to a flat all-systems result list grouped by system; install/update/activate via existing `CoreRow`/`useCores`/real backend. |
+| W73 — verify | version/0.7 (in-session) | ☑ | Mock fixtures mirror the broadened catalog; `scripts/inspect-cores.mjs` screenshots default browse + searched state (snes9x confirmed); visual-inspect verified=true guiOk=true on 4 routes; 60 JS tests green. |
 
 **Release rows**
 
