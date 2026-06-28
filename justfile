@@ -3,9 +3,11 @@ target := "aarch64-apple-darwin"
 bundle := "src-tauri/target/" + target + "/release/bundle/macos/" + app + ".app"
 deploy-root := env_var('HOME') / "Projects/deployed-apps/harmony"
 
-# Build production bundle (aarch64 macOS)
+# Build production app bundle (aarch64 macOS). `--bundles app` skips the DMG
+# step, which needs Developer-ID signing/notarization (T2, backlog) and would
+# otherwise fail the build. Build the DMG explicitly when distributing.
 build:
-    pnpm tauri build --target {{target}}
+    pnpm tauri build --target {{target}} --bundles app
 
 # Run in development mode (hot-reload)
 run:
