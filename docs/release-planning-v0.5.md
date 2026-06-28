@@ -62,9 +62,9 @@ follow). Each work item committed atomically; full gate suite before merge.
 
 | Item | Branch | Status | Notes |
 |---|---|---|---|
-| W51 — backend command + config | version/0.5 (in-session) | ☐ | |
-| W52 — frontend affordance + wiring | version/0.5 (in-session) | ☐ | |
-| W53 — verify | version/0.5 (in-session) | ☐ | |
+| W51 — backend command + config | version/0.5 (in-session) | ☑ | `AppConfig.games_dir`; `create_games_folder`/`suggest_games_dir` (+ Tauri-free `create_games_folder_inner`); absolute+system-dir safety, idempotent create, persistence; 190 Rust tests (incl. 6 new) + clippy clean. |
+| W52 — frontend affordance + wiring | version/0.5 (in-session) | ☑ | `CreateGamesFolderDialog` (pre-filled editable path, no silent writes) chains create → addContentFolder (tolerates `conflict`) → rescan; primary affordance in Library empty state + secondary in Settings → Folders empty state. |
+| W53 — verify | version/0.5 (in-session) | ☑ | `scripts/inspect-empty-states.mjs` screenshots the affordance on both empty states (text asserted); standard visual-inspect verified=true guiOk=true on 4 routes; 44 JS tests green. Design doc added. |
 
 **Release rows**
 
