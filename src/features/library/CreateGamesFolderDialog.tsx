@@ -152,19 +152,23 @@ export function CreateGamesFolderDialog({
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <label style={{ fontSize: 12, color: "var(--aura-on-surface-muted)" }}>
+              <label
+                htmlFor="games-dir-path"
+                style={{ fontSize: 12, color: "var(--aura-on-surface-muted)" }}
+              >
                 Location
               </label>
-              <AuraField
-                name="games-dir-path"
-                type="text"
-                value={path}
-                placeholder="~/Games"
-                events={{
-                  "aura-field:input": (e) =>
-                    setPath((e as CustomEvent<{ value: string }>).detail.value),
-                }}
-              />
+              <AuraField>
+                <input
+                  id="games-dir-path"
+                  name="games-dir-path"
+                  className="harmony-input"
+                  type="text"
+                  value={path}
+                  placeholder="~/Games"
+                  onChange={(e) => setPath(e.target.value)}
+                />
+              </AuraField>
             </div>
 
             {error && (

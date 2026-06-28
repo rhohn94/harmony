@@ -114,7 +114,7 @@ export function LibraryPage() {
             </p>
             <AuraButton
               variant="primary"
-              events={{ "aura-click": () => setShowCreate(true) }}
+              onClick={() => setShowCreate(true)}
             >
               Create a games folder for me
             </AuraButton>
