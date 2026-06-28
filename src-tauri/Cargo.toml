@@ -1,6 +1,6 @@
 [package]
 name = "harmony"
-version = "0.12.0"
+version = "0.13.0"
 description = "Harmony — a Mac-native (Apple Silicon) emulator frontend / launcher."
 authors = ["Harmony"]
 edition = "2021"
@@ -18,7 +18,7 @@ tauri-build = { version = "2", features = [] }
 # below. Keep one dependency per line, alphabetical, so parallel agents merge by
 # concatenation rather than colliding on a shared line.
 [dependencies]
-tauri = { version = "2", features = ["macos-private-api"] }
+tauri = { version = "2", features = ["protocol-asset", "macos-private-api"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
