@@ -77,6 +77,6 @@ pass before merge.
 
 | Step | Status | Notes |
 |---|---|---|
-| version/0.3 → dev | ☐ | |
-| dev → main promoted + tagged v0.3 | ☐ | |
+| version/0.3 → dev | ☑ | merged `--no-ff`; 40 tests + visual-inspect green on dev |
+| dev → main promoted + tagged v0.3 | ☑ | |
 | pushed to origin | ☐ | HUMAN-GATED — do not push without explicit go |
