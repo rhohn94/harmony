@@ -11,6 +11,7 @@
 //! serialize repo rows directly.
 
 pub mod art_cache;
+pub mod console_meta;
 pub mod controller_bindings;
 pub mod cores;
 pub mod library;

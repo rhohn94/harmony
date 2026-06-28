@@ -40,6 +40,8 @@
 | [modularization-metrics-design.md](modularization-metrics-design.md) | Modularization metrics (v3.20 D1): coupling, instability, and module-size metrics added to the managed-project quality surface |
 | [token-efficiency-enforcement-design.md](token-efficiency-enforcement-design.md) | Token-efficiency enforcement (v3.21 D1): applies and enforces the v1.9 token-efficiency methodology — skill-footprint budget, enforcer dial, and remediation playbook |
 | [ux-design-language-design.md](ux-design-language-design.md) | UX design language design: per-project design-language adaptation framework, two-tier token+component schema, upstream source integration |
+| [library-import-design.md](library-import-design.md) | v0.12 "Curator": ROM import (drag-drop + native file picker) into the managed Games dir, auto-metadata on add (cover art + Wikipedia description), manual refresh, and the curated links-only ROM-site download providers |
+| [console-browse-design.md](console-browse-design.md) | v0.12 "Curator": the "By Console" browse + detail view, the static console catalog (name/maker/gen/year/Wikipedia), per-console media cache, and the bundled per-console title catalog (libretro-database, names-only, embedded) |
 | *(add rows as docs are created)* | |
 
 ### UX tier (`docs/design/ux/`)

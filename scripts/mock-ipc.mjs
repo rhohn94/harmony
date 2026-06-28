@@ -29,7 +29,7 @@ export const MOCK_FIXTURES = {
     { id: 4, path: "/roms/n64/Super Mario 64.z64", system: "n64", crc32: "635a2bff", md5: null, cleanName: "Super Mario 64", datMatched: true, coreHint: "mupen64plus_next", artPath: null, sizeBytes: 8388608, addedAt: NOW, year: 1996, developer: "Nintendo EAD", publisher: "Nintendo", aliases: ["SM64"] },
     { id: 5, path: "/roms/nes/Metroid.nes", system: "nes", crc32: null, md5: null, cleanName: "Metroid.nes", datMatched: false, coreHint: "fceumm", artPath: null, sizeBytes: 131072, addedAt: NOW, year: null, developer: null, publisher: null, aliases: [] },
   ],
-  get_game: { id: 1, path: "/roms/nes/Super Mario Bros. 3.nes", system: "nes", crc32: "0b742b33", md5: null, cleanName: "Super Mario Bros. 3", datMatched: true, coreHint: "mesen", artPath: null, sizeBytes: 393216, addedAt: NOW, year: 1988, developer: "Nintendo R&D4", publisher: "Nintendo", aliases: ["SMB3"] },
+  get_game: { id: 1, path: "/roms/nes/Super Mario Bros. 3.nes", system: "nes", crc32: "0b742b33", md5: null, cleanName: "Super Mario Bros. 3", datMatched: true, coreHint: "mesen", artPath: null, sizeBytes: 393216, addedAt: NOW, year: 1988, developer: "Nintendo R&D4", publisher: "Nintendo", aliases: ["SMB3"], description: "Super Mario Bros. 3 is a 1988 platform game developed and published by Nintendo for the Famicom and NES.", wikipediaUrl: "https://en.wikipedia.org/wiki/Super_Mario_Bros._3" },
   list_content_folders: [
     { id: 1, path: "/Users/you/ROMs", enabled: true, addedAt: NOW },
   ],
@@ -81,11 +81,36 @@ export const MOCK_FIXTURES = {
   // --- Launch / RetroArch (src/ipc/launch.ts) ---
   locate_retroarch: "/Applications/RetroArch.app/Contents/MacOS/RetroArch",
 
+  // --- Console catalog (src/ipc/console.ts, v0.12) ---
+  list_consoles: [
+    { key: "nes", name: "Nintendo Entertainment System", manufacturer: "Nintendo", abbreviation: "NES", generation: 3, year: 1983, description: null, wikipediaUrl: null, imagePath: null, ownedCount: 2, catalogCount: 4081 },
+    { key: "mastersystem", name: "Sega Master System", manufacturer: "Sega", abbreviation: "SMS", generation: 3, year: 1985, description: null, wikipediaUrl: null, imagePath: null, ownedCount: 0, catalogCount: 770 },
+    { key: "snes", name: "Super Nintendo Entertainment System", manufacturer: "Nintendo", abbreviation: "SNES", generation: 4, year: 1990, description: null, wikipediaUrl: null, imagePath: null, ownedCount: 2, catalogCount: 2418 },
+    { key: "genesis", name: "Sega Genesis / Mega Drive", manufacturer: "Sega", abbreviation: "MD", generation: 4, year: 1988, description: null, wikipediaUrl: null, imagePath: null, ownedCount: 0, catalogCount: 1804 },
+    { key: "n64", name: "Nintendo 64", manufacturer: "Nintendo", abbreviation: "N64", generation: 5, year: 1996, description: null, wikipediaUrl: null, imagePath: null, ownedCount: 1, catalogCount: 601 },
+    { key: "ps1", name: "Sony PlayStation", manufacturer: "Sony", abbreviation: "PS1", generation: 5, year: 1994, description: null, wikipediaUrl: null, imagePath: null, ownedCount: 0, catalogCount: 6375 },
+  ],
+  get_console: {
+    key: "nes", name: "Nintendo Entertainment System", manufacturer: "Nintendo", abbreviation: "NES", generation: 3, year: 1983,
+    description: "The Nintendo Entertainment System is an 8-bit home video game console developed and marketed by Nintendo. It was first released in Japan in 1983 as the Family Computer.",
+    wikipediaUrl: "https://en.wikipedia.org/wiki/Nintendo_Entertainment_System", imagePath: null, ownedCount: 2, catalogCount: 4081,
+  },
+  list_catalog_titles: {
+    system: "nes", total: 3, offset: 0,
+    items: [
+      { title: "Super Mario Bros.", owned: true },
+      { title: "Metroid", owned: false },
+      { title: "Mega Man 2", owned: false },
+    ],
+  },
+
   // --- Fleet / Familiar / metadata: degrade gracefully ---
   get_fleet_status: { instanceId: "mock-instance", version: "0.2.0", versionDir: "v0.2.0" },
   probe_familiar: { available: false },
   get_cached_art: null,
   fetch_boxart: null,
+  enrich_game_metadata: { id: 1, path: "/roms/nes/Super Mario Bros. 3.nes", system: "nes", crc32: "0b742b33", md5: null, cleanName: "Super Mario Bros. 3", datMatched: true, coreHint: "mesen", artPath: null, sizeBytes: 393216, addedAt: NOW, year: 1988, developer: "Nintendo R&D4", publisher: "Nintendo", aliases: ["SMB3"], description: "A platform game.", wikipediaUrl: "https://en.wikipedia.org/wiki/Super_Mario_Bros._3" },
+  import_games: [],
   get_blurred_hero: null,
 };
 

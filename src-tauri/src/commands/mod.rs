@@ -18,6 +18,7 @@ pub mod fleet; // W11
 pub mod familiar; // W12
 // pub mod settings;    // W4/W15
 pub mod controllers; // W14
+pub mod console; // v0.12 — console catalog (browse + detail + bundled titles)
 
 /// Single source of truth for the Tauri invoke_handler. The builder invokes
 /// this macro exactly once (in `lib.rs`). Each domain contributes its command
@@ -47,13 +48,16 @@ macro_rules! register_commands {
             // library (W51 — create-a-games-folder)
             $crate::commands::library::suggest_games_dir,
             $crate::commands::library::create_games_folder,
+            // library (v0.12 — import a game)
+            $crate::commands::library::import_games,
             // launch (W7)
             $crate::commands::launch::launch_game,
             $crate::commands::launch::locate_retroarch,
             $crate::commands::launch::set_retroarch_path,
-            // metadata (W8)
+            // metadata (W8; v0.12 enrich_game_metadata)
             $crate::commands::metadata::fetch_boxart,
             $crate::commands::metadata::get_cached_art,
+            $crate::commands::metadata::enrich_game_metadata,
             // search (W9)
             $crate::commands::search::list_providers,
             $crate::commands::search::add_provider,
@@ -71,6 +75,10 @@ macro_rules! register_commands {
             // controllers (W14)
             $crate::commands::controllers::list_bindings,
             $crate::commands::controllers::set_binding,
+            // console catalog (v0.12)
+            $crate::commands::console::list_consoles,
+            $crate::commands::console::get_console,
+            $crate::commands::console::list_catalog_titles,
         ])
     };
 }

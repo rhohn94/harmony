@@ -5,7 +5,7 @@
 
 use crate::config::paths::Paths;
 use crate::config::AppConfig;
-use crate::core::library::{scan_folder_path, DatIndex, ScanReport};
+use crate::core::library::{import_file, scan_folder_path, DatIndex, ScanReport};
 use crate::db::repo::library::{ContentFolder, Game, LibraryRepo, NewContentFolder};
 use crate::db::repo::Repository;
 use crate::db::Db;
@@ -56,6 +56,10 @@ pub struct GameDto {
     pub publisher: Option<String>,
     /// Alternate titles, parsed from the stored JSON array (empty when absent).
     pub aliases: Vec<String>,
+    /// Wikipedia summary text, if fetched (v0.12 enrichment; null until then).
+    pub description: Option<String>,
+    /// Canonical Wikipedia article URL, if known (v0.12 enrichment).
+    pub wikipedia_url: Option<String>,
 }
 
 impl From<Game> for GameDto {
@@ -83,6 +87,8 @@ impl From<Game> for GameDto {
             developer: g.developer,
             publisher: g.publisher,
             aliases,
+            description: g.description,
+            wikipedia_url: g.wikipedia_url,
         }
     }
 }
@@ -278,6 +284,88 @@ pub async fn create_games_folder(
     suggested_path: Option<String>,
 ) -> AppResult<String> {
     create_games_folder_inner(&paths, suggested_path)
+}
+
+// --- v0.12: import a game (drag-and-drop / file picker) ----------------------
+
+/// Wire DTO for one file's import result (camelCase per §2).
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportItemDto {
+    /// The source path the user supplied.
+    pub source: String,
+    /// One of `imported` | `exists` | `unsupported` | `error`.
+    pub status: String,
+    /// The resulting game (present for `imported` and `exists`).
+    pub game: Option<GameDto>,
+    /// Human-readable detail for `unsupported` / `error`.
+    pub message: Option<String>,
+}
+
+/// Resolve the configured Games directory, creating + persisting the default
+/// `~/Games` when the user has not chosen one yet. Importing a file is an
+/// explicit user action, so materializing the destination directory is expected
+/// (unlike a silent background write). Refuses an unsafe default target.
+fn resolve_or_init_games_dir(paths: &Paths) -> AppResult<PathBuf> {
+    let mut cfg = AppConfig::load(paths)?;
+    if let Some(dir) = cfg.games_dir.as_deref() {
+        let p = PathBuf::from(dir);
+        std::fs::create_dir_all(&p)?;
+        return Ok(p);
+    }
+    let default = default_games_dir()?;
+    if !is_safe_games_target(&default) {
+        return Err(AppError::Validation(
+            "refusing to create the default games folder at an unsafe location".to_string(),
+        ));
+    }
+    std::fs::create_dir_all(&default)?;
+    cfg.games_dir = Some(default.to_string_lossy().into_owned());
+    cfg.save(paths)?;
+    Ok(default)
+}
+
+/// Import one or more ROM files into the library: identify each by extension,
+/// copy it into the configured Games directory, and register it. Returns a
+/// per-file result so the UI can report imported / already-present / unsupported
+/// / failed without aborting the whole batch on one bad file.
+///
+/// Metadata enrichment (cover art + Wikipedia) is intentionally NOT done here —
+/// the caller triggers `enrich_game_metadata` per newly imported game so the
+/// library grid appears immediately and art/descriptions fill in afterwards.
+#[tauri::command]
+pub async fn import_games(
+    paths: State<'_, Paths>,
+    db: State<'_, Db>,
+    sources: Vec<String>,
+) -> AppResult<Vec<ImportItemDto>> {
+    let games_dir = resolve_or_init_games_dir(&paths)?;
+    let repo = LibraryRepo::new(&db);
+    let mut items = Vec::with_capacity(sources.len());
+    for source in sources {
+        let item = match import_file(&db, &games_dir, Path::new(&source), None) {
+            Ok(outcome) => ImportItemDto {
+                status: if outcome.already_present { "exists" } else { "imported" }.to_string(),
+                game: repo.get_game(outcome.game_id).ok().map(Into::into),
+                message: None,
+                source,
+            },
+            Err(AppError::Unsupported(msg)) => ImportItemDto {
+                source,
+                status: "unsupported".to_string(),
+                game: None,
+                message: Some(msg),
+            },
+            Err(e) => ImportItemDto {
+                source,
+                status: "error".to_string(),
+                game: None,
+                message: Some(e.to_string()),
+            },
+        };
+        items.push(item);
+    }
+    Ok(items)
 }
 
 #[cfg(test)]

@@ -8,3 +8,4 @@ pub mod art_cache;
 pub mod cdn_client;
 pub mod fallback;
 pub mod name_sanitizer;
+pub mod wikipedia;

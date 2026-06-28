@@ -10,6 +10,7 @@
 // through. No CSS blur anywhere — the soft backdrop is the backend bitmap only.
 
 import { AuraButton, AuraCard } from "@aura/react";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -21,6 +22,7 @@ import { HeroBackdrop } from "./HeroBackdrop";
 import { GameTile } from "./GameTile";
 import { useBoxart } from "./useBoxart";
 import { LibraryFilters } from "./LibraryFilters";
+import { pickRomFiles, runImport, summarizeImport } from "./import";
 import { EMPTY_CRITERIA, facetValues, filterGames, type FilterCriteria } from "./filter";
 
 /** The large hero teaser over the backdrop: cover + title + system + Play. */
@@ -66,6 +68,9 @@ export function LibraryPage() {
   const [criteria, setCriteria] = useState<FilterCriteria>(EMPTY_CRITERIA);
   const [focused, setFocused] = useState<Game | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [importNote, setImportNote] = useState<string | null>(null);
 
   const loadGames = useCallback(() => {
     let cancelled = false;
@@ -90,6 +95,62 @@ export function LibraryPage() {
 
   useEffect(() => loadGames(), [loadGames]);
 
+  // Import a batch of file paths (from the picker or a drop), then refresh.
+  const handleImport = useCallback(
+    async (paths: string[]) => {
+      if (paths.length === 0) return;
+      setImporting(true);
+      setImportNote(null);
+      try {
+        // Refresh once now (new games appear with placeholders) and again once
+        // enrichment settles (cover art + descriptions fill in).
+        const results = await runImport(paths, () => loadGames());
+        setImportNote(summarizeImport(results));
+        loadGames();
+      } catch (err) {
+        setImportNote(err instanceof Error ? err.message : String(err));
+      } finally {
+        setImporting(false);
+      }
+    },
+    [loadGames],
+  );
+
+  const onPickImport = useCallback(() => {
+    void (async () => {
+      const paths = await pickRomFiles();
+      await handleImport(paths);
+    })();
+  }, [handleImport]);
+
+  // Drag-and-drop import via Tauri's webview drag-drop events. No-op outside a
+  // Tauri webview (tests / headless inspection), where the call throws/rejects.
+  useEffect(() => {
+    let active = true;
+    let unlisten: (() => void) | undefined;
+    void (async () => {
+      try {
+        const un = await getCurrentWebview().onDragDropEvent((event) => {
+          const p = event.payload;
+          if (p.type === "enter" || p.type === "over") setDragOver(true);
+          else if (p.type === "leave") setDragOver(false);
+          else if (p.type === "drop") {
+            setDragOver(false);
+            void handleImport(p.paths);
+          }
+        });
+        if (active) unlisten = un;
+        else un();
+      } catch {
+        // Not in a Tauri webview — drag-drop import is unavailable here.
+      }
+    })();
+    return () => {
+      active = false;
+      if (unlisten) unlisten();
+    };
+  }, [handleImport]);
+
   const facets = useMemo(() => facetValues(games), [games]);
   const visible = useMemo(() => filterGames(games, criteria), [games, criteria]);
 
@@ -97,8 +158,24 @@ export function LibraryPage() {
     <div className="harmony-library">
       <HeroBackdrop game={focused} />
 
+      {dragOver && (
+        <div className="harmony-dropzone" aria-hidden>
+          <div className="harmony-dropzone__inner">⬇ Drop ROMs to import</div>
+        </div>
+      )}
+
       <div className="harmony-library__content">
         <HeroTeaser game={focused} />
+
+        <div className="harmony-library__toolbar">
+          <AuraButton variant="primary" onClick={onPickImport} disabled={importing}>
+            {importing ? "Importing…" : "＋ Import games"}
+          </AuraButton>
+          <span className="harmony-muted harmony-library__hint">
+            …or drag ROM files anywhere onto the window.
+          </span>
+          {importNote && <span className="harmony-library__note">{importNote}</span>}
+        </div>
 
         <LibraryFilters facets={facets} criteria={criteria} onChange={setCriteria} />
 
@@ -109,15 +186,17 @@ export function LibraryPage() {
         {!loading && !error && games.length === 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-start" }}>
             <p className="harmony-muted" style={{ margin: 0 }}>
-              No games yet — create a games folder, or add an existing content
-              folder in Settings to scan your library.
+              No games yet — import a ROM (drag it in or pick a file), create a
+              games folder, or add an existing content folder in Settings.
             </p>
-            <AuraButton
-              variant="primary"
-              onClick={() => setShowCreate(true)}
-            >
-              Create a games folder for me
-            </AuraButton>
+            <div style={{ display: "flex", gap: 8 }}>
+              <AuraButton variant="primary" onClick={onPickImport} disabled={importing}>
+                {importing ? "Importing…" : "＋ Import games"}
+              </AuraButton>
+              <AuraButton variant="ghost" onClick={() => setShowCreate(true)}>
+                Create a games folder for me
+              </AuraButton>
+            </div>
           </div>
         )}
         {!loading && !error && games.length > 0 && visible.length === 0 && (

@@ -26,6 +26,8 @@ function game(over: Partial<Game>): Game {
     developer: null,
     publisher: null,
     aliases: [],
+    description: null,
+    wikipediaUrl: null,
     ...over,
   };
 }

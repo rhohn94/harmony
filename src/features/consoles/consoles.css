@@ -1,0 +1,259 @@
+/*
+ * Consoles feature styles (v0.12) — the "By Console" browse grid + console
+ * detail + bundled-catalog browser. Authored in the `harmony-theme` override
+ * layer (design-language.md §7.5) like the library styles, reusing the same
+ * Aura/Harmony tokens and translucent shelves so native vibrancy reads through.
+ * Focus rings are visible so the screens are controller-navigation-ready.
+ */
+
+@layer harmony-theme {
+  /* ---- browse page ---- */
+  .harmony-consoles {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--harmony-section-gap);
+  }
+  .harmony-consoles__header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--aura-space-2);
+  }
+  .harmony-consoles__title {
+    margin: 0;
+    font-size: 22px;
+  }
+  .harmony-consoles__search {
+    max-width: 360px;
+    margin-top: var(--aura-space-2);
+  }
+  .harmony-consoles__group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--aura-space-3);
+  }
+  .harmony-consoles__gen {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--aura-on-surface-muted);
+  }
+
+  .harmony-console-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--aura-space-4);
+  }
+
+  .harmony-console-tile {
+    appearance: none;
+    border: none;
+    background: none;
+    padding: 0;
+    text-align: left;
+    cursor: pointer;
+    border-radius: var(--harmony-radius-card);
+  }
+  .harmony-console-tile:focus-visible {
+    outline: var(--harmony-focus-ring);
+    outline-offset: var(--harmony-focus-ring-offset);
+  }
+  .harmony-console-tile__card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--aura-space-3);
+    padding: var(--aura-space-3);
+    height: 100%;
+    border-radius: var(--harmony-radius-card);
+    transition: transform var(--harmony-dur-fast) var(--harmony-ease-out);
+  }
+  .harmony-console-tile:hover .harmony-console-tile__card,
+  .harmony-console-tile:focus-visible .harmony-console-tile__card {
+    transform: translateY(-2px);
+  }
+  .harmony-console-tile__art {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 120px;
+    border-radius: var(--aura-radius-sm);
+    background: var(--aura-shelf-alpha);
+    overflow: hidden;
+  }
+  .harmony-console-tile__img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+  .harmony-console-tile__ph {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--aura-on-surface-muted);
+  }
+  .harmony-console-tile__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .harmony-console-tile__name {
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  .harmony-console-tile__sub {
+    font-size: 12px;
+    color: var(--aura-on-surface-muted);
+  }
+  .harmony-console-tile__counts {
+    font-size: 12px;
+    color: var(--aura-primary);
+  }
+
+  /* ---- detail page ---- */
+  .harmony-console-detail {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--harmony-section-gap);
+  }
+  .harmony-console-detail__hero {
+    display: flex;
+    gap: var(--harmony-section-gap);
+    flex-wrap: wrap;
+  }
+  .harmony-console-detail__photo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 280px;
+    min-height: 180px;
+    border-radius: var(--aura-radius-lg);
+    overflow: hidden;
+  }
+  .harmony-console-detail__photo-img {
+    max-width: 100%;
+    max-height: 240px;
+    object-fit: contain;
+  }
+  .harmony-console-detail__photo-ph {
+    font-size: 40px;
+    font-weight: 700;
+    color: var(--aura-on-surface-muted);
+  }
+  .harmony-console-detail__info {
+    flex: 1;
+    min-width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--aura-space-2);
+  }
+  .harmony-console-detail__name {
+    margin: 0;
+    font-size: 24px;
+  }
+  .harmony-console-detail__facts {
+    margin: 0;
+    color: var(--aura-on-surface-muted);
+  }
+  .harmony-console-detail__counts {
+    margin: 0;
+    font-size: 13px;
+    color: var(--aura-primary);
+  }
+  .harmony-console-detail__desc {
+    margin: var(--aura-space-2) 0 0;
+    line-height: 1.5;
+    max-width: 70ch;
+  }
+  .harmony-console-detail__section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--aura-space-3);
+  }
+  .harmony-console-detail__h2 {
+    margin: 0;
+    font-size: 16px;
+  }
+
+  /* ---- catalog browser ---- */
+  .harmony-catalog {
+    display: flex;
+    flex-direction: column;
+    gap: var(--aura-space-3);
+  }
+  .harmony-catalog__bar {
+    display: flex;
+    align-items: center;
+    gap: var(--aura-space-3);
+    flex-wrap: wrap;
+  }
+  .harmony-catalog__search {
+    flex: 1;
+    min-width: 240px;
+    max-width: 420px;
+  }
+  .harmony-catalog__count {
+    font-size: 13px;
+  }
+  .harmony-catalog__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .harmony-catalog__li {
+    margin: 0;
+    padding: 0;
+  }
+  .harmony-catalog__row {
+    display: flex;
+    align-items: center;
+    gap: var(--aura-space-3);
+    width: 100%;
+    padding: var(--aura-space-2) var(--harmony-space-2-5);
+    border: none;
+    border-radius: var(--aura-radius-sm);
+    background: var(--aura-shelf-alpha);
+    color: var(--aura-on-surface);
+    text-align: left;
+    cursor: pointer;
+    transition: background var(--harmony-dur-fast) var(--harmony-ease-out);
+  }
+  .harmony-catalog__row:hover,
+  .harmony-catalog__row:focus-visible {
+    background: var(--aura-surface-raised);
+    outline: none;
+  }
+  .harmony-catalog__row:focus-visible {
+    outline: var(--harmony-focus-ring);
+    outline-offset: var(--harmony-focus-ring-offset);
+  }
+  .harmony-catalog__name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .harmony-catalog__owned {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--aura-primary);
+  }
+  .harmony-catalog__find {
+    flex-shrink: 0;
+    font-size: 11px;
+    color: var(--aura-on-surface-muted);
+  }
+  .harmony-catalog__pager {
+    display: flex;
+    gap: var(--aura-space-3);
+    justify-content: center;
+    margin-top: var(--aura-space-2);
+  }
+}
