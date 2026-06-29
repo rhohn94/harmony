@@ -109,3 +109,69 @@ network probes — and is the recommended next increment.
   timeout, per-host rate limit, off by default.
 - Any result cap must be **visible** with a "load more" affordance; never let a
   sort imply completeness over un-loaded results (the NZBHydra trap).
+
+## 7. Relevance & structured search (v0.18 "Focus")
+
+v0.16/v0.17 preview and browse what a provider returned, but the scrape is
+deliberately source-agnostic — `extract_links` takes **every** `<a href>` with
+non-empty text. So a results page's nav bar, footer, pagination, and "Login /
+Register" chrome all become "results", in raw DOM order, with no notion of *what
+the user searched for*. v0.18 closes that gap on three fronts.
+
+### 7.1 Drop the junk at the scrape (W180)
+
+`extract_links` gains a conservative chrome filter, applied per candidate anchor
+after URL resolution and before the result is kept:
+
+- **Pagination / ordinals:** drop pure-numeric or single-character anchor text
+  (`1`, `2`, `›`, `»`).
+- **Exact-match chrome:** drop anchor text that is *exactly* (case-insensitive,
+  trimmed) a known nav/legal/social word — `home`, `login`, `log in`, `sign in`,
+  `sign up`, `register`, `next`, `previous`, `prev`, `more`, `back`, `top`,
+  `menu`, `search`, `about`, `contact`, `privacy`, `terms`, `help`, `faq`,
+  `cart`, `donate`, `forum`, `blog`, `rss`, `twitter`, `facebook`, `discord`.
+- **Length floor:** drop titles shorter than 2 characters.
+
+The filter is intentionally conservative — it matches *whole-string* chrome and
+pagination only, so a real title like "Home Alone (USA)" or "Contra" is never
+dropped. It is source-agnostic (no per-site rules) and unit-tested.
+
+### 7.2 Rank by relevance, indicate the match (W182/W183)
+
+Junk that survives the scrape filter is handled in the UI by a transparent,
+testable ranking heuristic (`resultRanking.ts`, pure):
+
+- **`scoreItem`** scores an item against the structured query: term-coverage of
+  the game-name tokens over the item's `title` + `url`, plus bonuses for a
+  console-token match, a region match, a full-coverage match, and a title-prefix
+  match. Higher = more relevant.
+- **`matchStrength`** classifies an item as `strong` (all name terms present),
+  `partial` (some), or `none` (zero) — independent of console/region so a legit
+  result whose title omits the console is never demoted to `none`.
+- **`rankItems`** stably orders a group's rows by score (descending), tie-broken
+  by original scrape order. This is the new **Relevance** sort — and the
+  default; Found / Title A→Z / Z→A remain.
+
+The match is **indicated**, not just ordered: `strong`/`partial` rows render a
+**Match** / **Partial** chip (`var(--aura-primary)` / muted) so the
+searched-for game is visible at a glance. Weak (`none`) rows are **demoted** to
+the bottom by default and only **hidden** when the user opts in via a
+**Hide unlikely matches** toggle (off by default) — never silently dropped, so a
+mis-scored result is always recoverable.
+
+### 7.3 Structured search beyond the game name (W181/W184/W185)
+
+Search gains a **console** select (sourced from the existing `list_consoles`
+catalog — `name`/`abbreviation`/`key` become ranking tokens) and a **region**
+select. Both always feed the client-side ranking. Whether they are *also*
+appended to the text sent to a given provider is a **per-provider** decision: a
+new `compose_filters` flag (migration 008, off by default, toggled in
+`ProviderDialog`) — because appending "SNES" to a site whose titles never carry
+the console name would shrink its hits, while for most ROM/archive providers it
+usefully narrows at the source. `run_search` therefore takes structured
+`console` + `region` params and composes them into the query only for providers
+that opted in; everyone else still searches on the bare game name.
+
+This keeps the no-download contract intact (still only fetching provider
+search-results HTML) and the scrape source-agnostic (W180 filters, it does not
+add per-site parsers).
