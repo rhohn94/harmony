@@ -103,6 +103,6 @@ via a headless mock-IPC Playwright pass.
 
 | Step | Status | Notes |
 |---|---|---|
-| feat/v0.18-search-relevance → dev | ☐ | merge `--no-ff` after full gates |
-| dev → main promoted + tagged v0.18 | ☐ | |
-| pushed to origin | ☐ | main + dev + tag v0.18 (fast-forward, no force) |
+| feat/v0.18-search-relevance → dev | ☑ | merged `--no-ff` after full gates |
+| dev → main promoted + tagged v0.18 | ☑ | `--no-ff` dev→main, dev fast-forwarded so dev≡main, lightweight tag `v0.18` |
+| pushed to origin | ☑ | dev + main + tag `v0.18` (fast-forward, no force) |
