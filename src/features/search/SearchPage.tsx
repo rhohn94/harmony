@@ -1,12 +1,14 @@
 /**
- * SearchPage — File-search UI screen (W17).
+ * SearchPage — File-search UI screen (W17 / v0.16 "Trove").
  *
  * Route: /search. Archetype: Search / Query-results (harmony-ux-design.md §5).
  *
  * Key contracts:
- *  - Results are LINKS ONLY — never auto-downloaded. Each result's `url` is
- *    opened in the system browser via tauri-plugin-opener. (file-search-design.md §2)
- *  - Ships with an empty provider list; guides the user to add one.
+ *  - v0.16 PREVIEWS results: the backend fetches each provider's search page and
+ *    returns the links it found, grouped by provider. Harmony NEVER downloads
+ *    the content — each item's `url` is opened in the system browser via
+ *    tauri-plugin-opener. (download-search-design.md)
+ *  - Ships with an empty user-provider list; guides the user to add one.
  *  - Controller-navigable: query field → provider chips → result links → add button.
  */
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -22,7 +24,11 @@ import {
   removeProvider,
   runSearch,
 } from "../../ipc/search";
-import type { SearchProvider, SearchResult } from "../../ipc/search";
+import type {
+  SearchProvider,
+  ProviderResults,
+  SearchResultItem,
+} from "../../ipc/search";
 import { isAppError } from "../../ipc/commands";
 import { ProviderDialog } from "./ProviderDialog";
 import type { ProviderFormData } from "./ProviderDialog";
@@ -87,8 +93,8 @@ function EmptyState({ onAddProvider }: { onAddProvider: () => void }) {
   );
 }
 
-/** A single result row rendered as a focusable link. */
-function ResultRow({ result }: { result: SearchResult }) {
+/** A single previewed result rendered as a focusable link. */
+function ResultRow({ result }: { result: SearchResultItem }) {
   async function handleOpen() {
     await openUrl(result.url);
   }
@@ -151,6 +157,116 @@ function ResultRow({ result }: { result: SearchResult }) {
         </span>
       </button>
     </motion.li>
+  );
+}
+
+/** One provider's previewed results: header (with open-search-page link and the
+ * scaffolded direct-download marker), then the scraped items, an error, or an
+ * empty note. */
+function ProviderResultGroup({ group }: { group: ProviderResults }) {
+  async function openSearchPage() {
+    if (group.searchUrl) await openUrl(group.searchUrl);
+  }
+
+  return (
+    <div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "12px 16px 4px",
+        }}
+      >
+        <h3
+          style={{
+            margin: 0,
+            flex: 1,
+            fontSize: 12,
+            fontWeight: 600,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            color: "var(--aura-on-surface-muted)",
+          }}
+        >
+          {group.providerName}
+        </h3>
+        {/* v0.16 scaffolding: a vendor with the future direct-download
+            capability shows a clearly-disabled marker — no action is wired yet. */}
+        {group.directDownload && (
+          <span
+            title="Direct download is not available yet — coming in a future release."
+            style={{
+              fontSize: 10,
+              fontWeight: 600,
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
+              color: "var(--aura-on-surface-muted)",
+              border: "1px solid var(--aura-on-surface-muted)",
+              borderRadius: 4,
+              padding: "1px 5px",
+              opacity: 0.6,
+            }}
+          >
+            ⬇ Direct download · soon
+          </span>
+        )}
+        {group.searchUrl && (
+          <button
+            onClick={openSearchPage}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: 0,
+              fontSize: 11,
+              color: "var(--aura-primary)",
+            }}
+            title="Open the full results page in your browser"
+          >
+            open search page ↗
+          </button>
+        )}
+      </div>
+
+      {group.error ? (
+        <p
+          style={{
+            margin: 0,
+            padding: "0 16px 10px",
+            fontSize: 12,
+            color: "var(--aura-on-surface-muted)",
+          }}
+        >
+          Couldn't load a preview ({group.error}). Use “open search page” above to
+          view results in your browser.
+        </p>
+      ) : group.items.length === 0 ? (
+        <p
+          style={{
+            margin: 0,
+            padding: "0 16px 10px",
+            fontSize: 12,
+            color: "var(--aura-on-surface-muted)",
+          }}
+        >
+          No previewable links found.
+        </p>
+      ) : (
+        <AnimatePresence>
+          <motion.ul
+            variants={listContainer}
+            initial="hidden"
+            animate="visible"
+            style={{ listStyle: "none", margin: 0, padding: "0 4px 8px" }}
+          >
+            {group.items.map((item) => (
+              <ResultRow key={item.url} result={item} />
+            ))}
+          </motion.ul>
+        </AnimatePresence>
+      )}
+    </div>
   );
 }
 
@@ -247,7 +363,7 @@ export function SearchPage() {
   ).trim();
   const [providers, setProviders] = useState<SearchProvider[]>([]);
   const [query, setQuery] = useState(initialQuery);
-  const [results, setResults] = useState<SearchResult[] | null>(null);
+  const [results, setResults] = useState<ProviderResults[] | null>(null);
   const [running, setRunning] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [dialog, setDialog] = useState<DialogState>({ open: false });
@@ -320,6 +436,7 @@ export function SearchPage() {
         id: dialog.provider.id,
         name: data.name,
         urlTemplate: data.urlTemplate,
+        directDownload: data.directDownload,
       });
       setProviders((prev) =>
         prev.map((x) => (x.id === dialog.provider!.id ? updated : x))
@@ -331,17 +448,10 @@ export function SearchPage() {
     setDialog({ open: false });
   }
 
-  // Group results by providerId.
-  const resultsByProvider = results
-    ? providers.reduce<Record<number, SearchResult[]>>((acc, p) => {
-        const group = results.filter((r) => r.providerId === p.id);
-        if (group.length > 0) acc[p.id] = group;
-        return acc;
-      }, {})
-    : {};
-
+  // Results arrive already grouped per provider from the backend (v0.16).
   const hasProviders = providers.length > 0;
   const activeCount = providers.filter((p) => p.enabled).length;
+  const totalItems = results?.reduce((n, g) => n + g.items.length, 0) ?? 0;
 
   return (
     <section
@@ -351,9 +461,10 @@ export function SearchPage() {
       {/* Header */}
       <h1 style={{ margin: 0, fontSize: 22 }}>Search</h1>
       <p style={{ margin: 0, fontSize: 13, color: "var(--aura-on-surface-muted)" }}>
-        Find games and info across your providers. Results are{" "}
-        <strong>links only</strong> — Harmony opens them in your browser and never
-        downloads files for you. <span aria-hidden>⬇</span> marks download sources.
+        Find games and info across your providers. Harmony{" "}
+        <strong>previews what each provider found</strong> and opens your chosen
+        link in your browser — it <strong>never downloads files for you</strong>.{" "}
+        <span aria-hidden>⬇</span> marks download sources.
       </p>
 
       {/* Query + run */}
@@ -414,7 +525,7 @@ export function SearchPage() {
         </p>
       )}
 
-      {/* Results */}
+      {/* Results — one previewed group per provider */}
       {results !== null && (
         <AuraCard
           class="harmony-panel"
@@ -429,43 +540,25 @@ export function SearchPage() {
                 fontSize: 14,
               }}
             >
-              No results for "{query}".
+              No enabled providers to search.
             </p>
           ) : (
-            /* Grouped by provider */
-            Object.entries(resultsByProvider).map(([pId, group]) => {
-              const pName =
-                providers.find((p) => p.id === Number(pId))?.name ?? "Provider";
-              return (
-                <div key={pId}>
-                  <h3
-                    style={{
-                      margin: 0,
-                      padding: "12px 16px 4px",
-                      fontSize: 12,
-                      fontWeight: 600,
-                      letterSpacing: "0.06em",
-                      textTransform: "uppercase",
-                      color: "var(--aura-on-surface-muted)",
-                    }}
-                  >
-                    {pName}
-                  </h3>
-                  <AnimatePresence>
-                    <motion.ul
-                      variants={listContainer}
-                      initial="hidden"
-                      animate="visible"
-                      style={{ listStyle: "none", margin: 0, padding: "0 4px 8px" }}
-                    >
-                      {group.map((r) => (
-                        <ResultRow key={r.url} result={r} />
-                      ))}
-                    </motion.ul>
-                  </AnimatePresence>
-                </div>
-              );
-            })
+            results.map((group) => (
+              <ProviderResultGroup key={group.providerId} group={group} />
+            ))
+          )}
+          {results.length > 0 && totalItems === 0 && (
+            <p
+              style={{
+                margin: 0,
+                padding: "4px 16px 16px",
+                color: "var(--aura-on-surface-muted)",
+                fontSize: 12,
+              }}
+            >
+              No previewable links found for "{query}". Use a provider's “open
+              search page” link to see full results in your browser.
+            </p>
           )}
         </AuraCard>
       )}

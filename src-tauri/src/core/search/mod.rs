@@ -1,8 +1,13 @@
-//! Search domain core (W9): provider model + template substitution.
+//! Search domain core (W9, v0.16): provider model + template substitution +
+//! result-preview fetch.
 //!
-//! This module is intentionally side-effect-free so all logic is unit-testable
-//! without a live database or Tauri runtime. Persistence is handled by
+//! `provider` and `template` are side-effect-free and unit-testable without a
+//! live database or Tauri runtime. `fetch` (v0.16) adds the one I/O step — it
+//! retrieves a provider's public search-results page and scrapes the candidate
+//! links so the UI can preview them; its parsing core (`extract_links`) is pure
+//! and tested without a network. Persistence is handled by
 //! `db::repo::search_providers` (W3).
 
+pub mod fetch;
 pub mod provider;
 pub mod template;

@@ -1,6 +1,6 @@
 [package]
 name = "harmony"
-version = "0.15.0"
+version = "0.16.0"
 description = "Harmony — a Mac-native (Apple Silicon) emulator frontend / launcher."
 authors = ["Harmony"]
 edition = "2021"
@@ -33,6 +33,7 @@ percent-encoding = "2"                                     # W8 (CDN URL encodin
 quick-xml = "0.36"                                         # W6 (No-Intro Logiqx DAT parsing)
 reqwest = { version = "0.12", features = ["json", "blocking"] } # W5/W8/W12 (network)
 rusqlite = { version = "0.32", features = ["bundled"] }    # W3 (db)
+scraper = "0.20"                                           # v0.16 (parse provider search-result HTML for in-app preview)
 tiny_http = "0.12"                                         # W11 (localhost fleet status server)
 tauri-plugin-opener = "2"                                  # W17 (open search result URLs in system browser)
 include_dir = "0.7"                                       # v0.12 (embed the bundled console title catalog)

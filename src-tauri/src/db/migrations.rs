@@ -43,6 +43,10 @@ const MIGRATIONS: &[Migration] = &[
         version: 6,
         sql: include_str!("migrations/006_console_meta.sql"),
     },
+    Migration {
+        version: 7,
+        sql: include_str!("migrations/007_search_provider_direct_download.sql"),
+    },
 ];
 
 /// Read the database's current schema version (`PRAGMA user_version`, default 0).
