@@ -32,7 +32,7 @@ import type {
 import { isAppError } from "../../ipc/commands";
 import { ProviderDialog } from "./ProviderDialog";
 import type { ProviderFormData } from "./ProviderDialog";
-import { listContainer, listItem } from "../../lib/motion";
+import { listContainer, listItem, DUR, EASE_OUT, EASE_STANDARD } from "../../lib/motion";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -160,37 +160,103 @@ function ResultRow({ result }: { result: SearchResultItem }) {
   );
 }
 
-/** One provider's previewed results: header (with open-search-page link and the
- * scaffolded direct-download marker), then the scraped items, an error, or an
- * empty note. */
-function ProviderResultGroup({ group }: { group: ProviderResults }) {
+/** A small count/status pill for a provider header: link count, or an error
+ * marker when the fetch failed. */
+function GroupCountBadge({ group }: { group: ProviderResults }) {
+  const isError = group.error !== null;
+  const label = isError ? "error" : String(group.items.length);
+  return (
+    <span
+      style={{
+        fontSize: 11,
+        fontWeight: 600,
+        lineHeight: 1,
+        minWidth: 18,
+        textAlign: "center",
+        padding: "2px 6px",
+        borderRadius: 10,
+        background: isError ? "transparent" : "var(--aura-surface-raised)",
+        border: isError ? "1px solid var(--aura-error)" : "none",
+        color: isError ? "var(--aura-error)" : "var(--aura-on-surface-muted)",
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
+/** One provider's previewed results, as a collapsible group. The header is a
+ * toggle (rotating chevron + provider name + count badge); the body animates
+ * open/closed. The open-search-page link and the scaffolded direct-download
+ * marker sit beside the toggle so they don't trigger a collapse. */
+function ProviderResultGroup({
+  group,
+  collapsed,
+  onToggle,
+}: {
+  group: ProviderResults;
+  collapsed: boolean;
+  onToggle: () => void;
+}) {
   async function openSearchPage() {
     if (group.searchUrl) await openUrl(group.searchUrl);
   }
 
+  const bodyId = `provider-group-${group.providerId}`;
+
   return (
-    <div>
+    <div style={{ borderTop: "1px solid var(--aura-outline-subtle, transparent)" }}>
       <div
         style={{
           display: "flex",
           alignItems: "center",
           gap: 8,
-          padding: "12px 16px 4px",
+          padding: "4px 16px",
         }}
       >
-        <h3
+        {/* The toggle owns the chevron + name + count and spans the free space. */}
+        <button
+          onClick={onToggle}
+          aria-expanded={!collapsed}
+          aria-controls={bodyId}
           style={{
-            margin: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
             flex: 1,
-            fontSize: 12,
-            fontWeight: 600,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
+            minWidth: 0,
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: "8px 0",
             color: "var(--aura-on-surface-muted)",
+            textAlign: "left",
           }}
+          title={collapsed ? "Expand" : "Collapse"}
         >
-          {group.providerName}
-        </h3>
+          <motion.span
+            aria-hidden
+            animate={{ rotate: collapsed ? 0 : 90 }}
+            transition={{ duration: DUR.fast, ease: EASE_OUT }}
+            style={{ fontSize: 10, lineHeight: 1, display: "inline-block", width: 10 }}
+          >
+            ▶
+          </motion.span>
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {group.providerName}
+          </span>
+          <GroupCountBadge group={group} />
+        </button>
         {/* v0.16 scaffolding: a vendor with the future direct-download
             capability shows a clearly-disabled marker — no action is wired yet. */}
         {group.directDownload && (
@@ -206,6 +272,7 @@ function ProviderResultGroup({ group }: { group: ProviderResults }) {
               borderRadius: 4,
               padding: "1px 5px",
               opacity: 0.6,
+              flexShrink: 0,
             }}
           >
             ⬇ Direct download · soon
@@ -221,6 +288,7 @@ function ProviderResultGroup({ group }: { group: ProviderResults }) {
               padding: 0,
               fontSize: 11,
               color: "var(--aura-primary)",
+              flexShrink: 0,
             }}
             title="Open the full results page in your browser"
           >
@@ -229,43 +297,55 @@ function ProviderResultGroup({ group }: { group: ProviderResults }) {
         )}
       </div>
 
-      {group.error ? (
-        <p
-          style={{
-            margin: 0,
-            padding: "0 16px 10px",
-            fontSize: 12,
-            color: "var(--aura-on-surface-muted)",
-          }}
-        >
-          Couldn't load a preview ({group.error}). Use “open search page” above to
-          view results in your browser.
-        </p>
-      ) : group.items.length === 0 ? (
-        <p
-          style={{
-            margin: 0,
-            padding: "0 16px 10px",
-            fontSize: 12,
-            color: "var(--aura-on-surface-muted)",
-          }}
-        >
-          No previewable links found.
-        </p>
-      ) : (
-        <AnimatePresence>
-          <motion.ul
-            variants={listContainer}
-            initial="hidden"
-            animate="visible"
-            style={{ listStyle: "none", margin: 0, padding: "0 4px 8px" }}
+      <AnimatePresence initial={false}>
+        {!collapsed && (
+          <motion.div
+            key="body"
+            id={bodyId}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: DUR.base, ease: EASE_STANDARD }}
+            style={{ overflow: "hidden" }}
           >
-            {group.items.map((item) => (
-              <ResultRow key={item.url} result={item} />
-            ))}
-          </motion.ul>
-        </AnimatePresence>
-      )}
+            {group.error ? (
+              <p
+                style={{
+                  margin: 0,
+                  padding: "0 16px 10px",
+                  fontSize: 12,
+                  color: "var(--aura-on-surface-muted)",
+                }}
+              >
+                Couldn't load a preview ({group.error}). Use “open search page”
+                above to view results in your browser.
+              </p>
+            ) : group.items.length === 0 ? (
+              <p
+                style={{
+                  margin: 0,
+                  padding: "0 16px 10px",
+                  fontSize: 12,
+                  color: "var(--aura-on-surface-muted)",
+                }}
+              >
+                No previewable links found.
+              </p>
+            ) : (
+              <motion.ul
+                variants={listContainer}
+                initial="hidden"
+                animate="visible"
+                style={{ listStyle: "none", margin: 0, padding: "0 4px 8px" }}
+              >
+                {group.items.map((item) => (
+                  <ResultRow key={item.url} result={item} />
+                ))}
+              </motion.ul>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -364,6 +444,9 @@ export function SearchPage() {
   const [providers, setProviders] = useState<SearchProvider[]>([]);
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<ProviderResults[] | null>(null);
+  // Collapsed provider groups, keyed by providerId. Empty/errored groups start
+  // collapsed so the populated providers lead; the user can fold any group.
+  const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
   const [running, setRunning] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [dialog, setDialog] = useState<DialogState>({ open: false });
@@ -391,6 +474,10 @@ export function SearchPage() {
     try {
       const all = await runSearch({ query: q });
       setResults(all);
+      // Start with empty/errored groups folded; populated providers stay open.
+      setCollapsed(
+        new Set(all.filter((g) => g.items.length === 0).map((g) => g.providerId))
+      );
     } catch (err) {
       const detail = isAppError(err) ? err.detail : String(err);
       setSearchError(detail);
@@ -446,6 +533,22 @@ export function SearchPage() {
       setProviders((prev) => [...prev, created]);
     }
     setDialog({ open: false });
+  }
+
+  // Collapse controls for the result groups.
+  function toggleGroup(id: number) {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  function expandAll() {
+    setCollapsed(new Set());
+  }
+  function collapseAll() {
+    setCollapsed(new Set((results ?? []).map((g) => g.providerId)));
   }
 
   // Results arrive already grouped per provider from the backend (v0.16).
@@ -543,9 +646,78 @@ export function SearchPage() {
               No enabled providers to search.
             </p>
           ) : (
-            results.map((group) => (
-              <ProviderResultGroup key={group.providerId} group={group} />
-            ))
+            <>
+              {/* Summary + expand/collapse all (only worth it with >1 group). */}
+              {results.length > 1 && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "10px 16px",
+                  }}
+                >
+                  <span
+                    style={{
+                      flex: 1,
+                      fontSize: 12,
+                      color: "var(--aura-on-surface-muted)",
+                    }}
+                  >
+                    {totalItems} {totalItems === 1 ? "link" : "links"} across{" "}
+                    {results.length} providers
+                  </span>
+                  <button
+                    onClick={expandAll}
+                    disabled={collapsed.size === 0}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: collapsed.size === 0 ? "default" : "pointer",
+                      padding: 0,
+                      fontSize: 11,
+                      color:
+                        collapsed.size === 0
+                          ? "var(--aura-on-surface-muted)"
+                          : "var(--aura-primary)",
+                      opacity: collapsed.size === 0 ? 0.5 : 1,
+                    }}
+                  >
+                    Expand all
+                  </button>
+                  <span style={{ color: "var(--aura-on-surface-muted)", fontSize: 11 }}>
+                    ·
+                  </span>
+                  <button
+                    onClick={collapseAll}
+                    disabled={collapsed.size === results.length}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor:
+                        collapsed.size === results.length ? "default" : "pointer",
+                      padding: 0,
+                      fontSize: 11,
+                      color:
+                        collapsed.size === results.length
+                          ? "var(--aura-on-surface-muted)"
+                          : "var(--aura-primary)",
+                      opacity: collapsed.size === results.length ? 0.5 : 1,
+                    }}
+                  >
+                    Collapse all
+                  </button>
+                </div>
+              )}
+              {results.map((group) => (
+                <ProviderResultGroup
+                  key={group.providerId}
+                  group={group}
+                  collapsed={collapsed.has(group.providerId)}
+                  onToggle={() => toggleGroup(group.providerId)}
+                />
+              ))}
+            </>
           )}
           {results.length > 0 && totalItems === 0 && (
             <p
