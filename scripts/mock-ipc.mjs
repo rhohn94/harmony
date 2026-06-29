@@ -65,15 +65,37 @@ export const MOCK_FIXTURES = {
 
   // --- Search (src/ipc/search.ts) — the built-in providers seeded by migration 003 ---
   list_providers: [
-    { id: 1, name: "MobyGames", urlTemplate: "https://www.mobygames.com/search/?q={query}", enabled: true, kind: "reference" },
-    { id: 2, name: "IGDB", urlTemplate: "https://www.igdb.com/search?type=1&q={query}", enabled: true, kind: "reference" },
-    { id: 3, name: "Wikipedia", urlTemplate: "https://en.wikipedia.org/w/index.php?search={query}", enabled: true, kind: "reference" },
-    { id: 4, name: "GameFAQs", urlTemplate: "https://gamefaqs.gamespot.com/search?game={query}", enabled: true, kind: "reference" },
+    { id: 1, name: "MobyGames", urlTemplate: "https://www.mobygames.com/search/?q={query}", enabled: true, kind: "reference", directDownload: false },
+    { id: 2, name: "IGDB", urlTemplate: "https://www.igdb.com/search?type=1&q={query}", enabled: true, kind: "reference", directDownload: false },
+    { id: 3, name: "Wikipedia", urlTemplate: "https://en.wikipedia.org/w/index.php?search={query}", enabled: true, kind: "reference", directDownload: false },
+    { id: 4, name: "GameFAQs", urlTemplate: "https://gamefaqs.gamespot.com/search?game={query}", enabled: true, kind: "reference", directDownload: false },
     // Download-oriented, links-only legal sources (v0.11 migration 004).
-    { id: 5, name: "Internet Archive", urlTemplate: "https://archive.org/search?query={query}", enabled: true, kind: "download" },
-    { id: 6, name: "itch.io", urlTemplate: "https://itch.io/search?q={query}", enabled: true, kind: "download" },
+    { id: 5, name: "Internet Archive", urlTemplate: "https://archive.org/search?query={query}", enabled: true, kind: "download", directDownload: false },
+    { id: 6, name: "itch.io", urlTemplate: "https://itch.io/search?q={query}", enabled: true, kind: "download", directDownload: false },
   ],
-  run_search: [],
+  // v0.16 preview shape: one ProviderResults group per provider, with scraped
+  // items, the searchUrl fallback, and an optional per-provider error.
+  run_search: [
+    {
+      providerId: 5,
+      providerName: "Internet Archive",
+      searchUrl: "https://archive.org/search?query=mario",
+      directDownload: false,
+      items: [
+        { title: "Super Mario Bros. (USA)", url: "https://archive.org/details/smb-usa" },
+        { title: "Super Mario World (World)", url: "https://archive.org/details/smw-world" },
+      ],
+      error: null,
+    },
+    {
+      providerId: 6,
+      providerName: "itch.io",
+      searchUrl: "https://itch.io/search?q=mario",
+      directDownload: false,
+      items: [],
+      error: "network error: provider returned status 503",
+    },
+  ],
 
   // --- Controller (src/ipc/controllers.ts) ---
   list_bindings: [],

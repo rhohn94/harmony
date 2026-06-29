@@ -1,16 +1,24 @@
-//! Search-provider IPC adapters (W9 / W17). Thin `#[tauri::command]` wrappers
-//! that delegate to `core::search` and `db::repo::search_providers`.
+//! Search-provider IPC adapters (W9 / W17 / v0.16 "Trove"). Thin
+//! `#[tauri::command]` wrappers that delegate to `core::search` and
+//! `db::repo::search_providers`.
 //!
-//! **Design contract (architecture-design.md §2.5):**
-//! - `run_search` returns constructed links **only** — it never fetches URLs
-//!   server-side and never auto-downloads anything. The caller opens links in
-//!   the system browser. This is a hard requirement.
+//! **Design contract (architecture-design.md §2.5; download-search-design.md):**
+//! - v0.16 evolves `run_search`: it now fetches each enabled provider's public
+//!   search-results page and scrapes the candidate links so the UI can **preview
+//!   what the provider found**. The invariant that matters is unchanged —
+//!   Harmony **never downloads the content itself**; it surfaces links the user
+//!   opens in their own browser.
+//! - Each provider is fetched concurrently; a fetch failure degrades that
+//!   provider to "no preview" (its `searchUrl` is still offered) rather than
+//!   failing the whole search.
+//! - `directDownload` is a per-vendor capability flag — v0.16 ships the flag and
+//!   its plumbing only; no direct-download action exists yet.
 //! - The provider list ships **empty** — users add providers manually via
 //!   `add_provider`.
 
 use tauri::State;
 
-use crate::core::search::{provider as provider_core, template};
+use crate::core::search::{fetch, provider as provider_core, template};
 use crate::db::{
     repo::{
         search_providers::{NewSearchProvider, SearchProvidersRepo},
@@ -33,18 +41,38 @@ pub struct SearchProvider {
     /// `"reference"` (metadata/info) or `"download"` (links to legal homes for
     /// downloadable content). The UI groups + labels providers by this.
     pub kind: String,
+    /// Per-vendor opt-in for the future direct-download feature (v0.16
+    /// scaffolding). `false` by default; no direct-download action exists yet.
+    #[serde(rename = "directDownload")]
+    pub direct_download: bool,
 }
 
-/// A single search result — a constructed link only (mirrors TS `SearchResult`).
-/// The UI opens this URL in the system browser; the backend never fetches it.
+/// A single scraped preview link from a provider's results page (mirrors TS
+/// `SearchResultItem`). The UI opens this URL in the system browser.
 #[derive(serde::Serialize)]
-pub struct SearchResult {
+pub struct SearchResultItem {
+    pub title: String,
+    pub url: String,
+}
+
+/// The previewed results for one provider (mirrors TS `ProviderResults`).
+///
+/// `search_url` is the constructed provider search-page link — always present,
+/// so the UI can offer "open the full results page" even when scraping yields
+/// nothing or fails. `items` are the scraped preview links; `error` carries a
+/// per-provider fetch/parse failure (the search as a whole still succeeds).
+#[derive(serde::Serialize)]
+pub struct ProviderResults {
     #[serde(rename = "providerId")]
     pub provider_id: i64,
     #[serde(rename = "providerName")]
     pub provider_name: String,
-    pub title: String,
-    pub url: String,
+    #[serde(rename = "searchUrl")]
+    pub search_url: String,
+    #[serde(rename = "directDownload")]
+    pub direct_download: bool,
+    pub items: Vec<SearchResultItem>,
+    pub error: Option<String>,
 }
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -56,6 +84,50 @@ fn to_ipc(p: crate::db::repo::search_providers::SearchProvider) -> SearchProvide
         url_template: p.url_template,
         enabled: p.enabled,
         kind: p.kind,
+        direct_download: p.direct_download,
+    }
+}
+
+/// Build one provider's preview group: substitute the query into its template,
+/// fetch + scrape the results page, and map any failure to a per-provider error.
+/// Pure of `State`/`Db` so it can run on a worker thread (see `run_search`).
+fn provider_results(
+    p: &crate::db::repo::search_providers::SearchProvider,
+    query: &str,
+) -> ProviderResults {
+    let search_url = match template::substitute(&p.url_template, query) {
+        Ok(url) => url,
+        Err(e) => {
+            return ProviderResults {
+                provider_id: p.id,
+                provider_name: p.name.clone(),
+                search_url: String::new(),
+                direct_download: p.direct_download,
+                items: Vec::new(),
+                error: Some(e.to_string()),
+            };
+        }
+    };
+    let (items, error) = match fetch::fetch_results(&search_url) {
+        Ok(found) => (
+            found
+                .into_iter()
+                .map(|r| SearchResultItem {
+                    title: r.title,
+                    url: r.url,
+                })
+                .collect(),
+            None,
+        ),
+        Err(e) => (Vec::new(), Some(e.to_string())),
+    };
+    ProviderResults {
+        provider_id: p.id,
+        provider_name: p.name.clone(),
+        search_url,
+        direct_download: p.direct_download,
+        items,
+        error,
     }
 }
 
@@ -74,6 +146,7 @@ pub fn list_providers(db: State<'_, Db>) -> AppResult<Vec<SearchProvider>> {
 pub fn add_provider(
     name: String,
     url_template: String,
+    direct_download: Option<bool>,
     db: State<'_, Db>,
 ) -> AppResult<SearchProvider> {
     provider_core::validate_template(&url_template)?;
@@ -85,6 +158,8 @@ pub fn add_provider(
         // User-added providers are reference-kind by default; the seeded
         // download providers are the curated legal sources (migration 004).
         kind: "reference".to_string(),
+        // Direct download is opt-in per vendor; off unless explicitly set.
+        direct_download: direct_download.unwrap_or(false),
     })?;
     repo.get(id).map(to_ipc)
 }
@@ -96,6 +171,7 @@ pub fn update_provider(
     name: Option<String>,
     url_template: Option<String>,
     enabled: Option<bool>,
+    direct_download: Option<bool>,
     db: State<'_, Db>,
 ) -> AppResult<SearchProvider> {
     if let Some(ref t) = url_template {
@@ -111,6 +187,9 @@ pub fn update_provider(
     if let Some(e) = enabled {
         repo.set_enabled(id, e)?;
     }
+    if let Some(d) = direct_download {
+        repo.set_direct_download(id, d)?;
+    }
     repo.get(id).map(to_ipc)
 }
 
@@ -121,17 +200,21 @@ pub fn remove_provider(id: i64, db: State<'_, Db>) -> AppResult<()> {
     repo.delete(id)
 }
 
-/// Construct search links for the given query.
+/// Run a search and preview each provider's results.
 ///
-/// **Returns links only — never fetches or downloads.** The UI opens each link
-/// in the system browser. If `provider_id` is supplied, only that provider is
-/// used; otherwise all enabled providers are used.
+/// For every selected provider, the query is substituted into its URL template,
+/// the resulting search page is fetched, and its candidate links are scraped for
+/// an in-app preview. **Harmony never downloads the content itself** — each
+/// previewed link is opened by the user in their own browser. Providers are
+/// fetched concurrently; a per-provider failure surfaces as that group's `error`
+/// and never fails the whole search. If `provider_id` is supplied, only that
+/// provider is used; otherwise all enabled providers are used.
 #[tauri::command]
 pub fn run_search(
     query: String,
     provider_id: Option<i64>,
     db: State<'_, Db>,
-) -> AppResult<Vec<SearchResult>> {
+) -> AppResult<Vec<ProviderResults>> {
     if query.trim().is_empty() {
         return Err(AppError::Validation("query must not be empty".to_string()));
     }
@@ -142,16 +225,19 @@ pub fn run_search(
         repo.list()?.into_iter().filter(|p| p.enabled).collect()
     };
 
-    providers
-        .into_iter()
-        .map(|p| {
-            let url = template::substitute(&p.url_template, &query)?;
-            Ok(SearchResult {
-                provider_id: p.id,
-                provider_name: p.name.clone(),
-                title: p.name,
-                url,
-            })
-        })
-        .collect::<AppResult<Vec<_>>>()
+    // Fetch every provider concurrently so total latency is bounded by the
+    // slowest single fetch, not their sum. Each scrape is self-contained and the
+    // scraper's HTML types never cross the thread boundary (only the owned
+    // `ProviderResults` does), so a scoped thread per provider is safe.
+    let groups = std::thread::scope(|scope| {
+        let handles: Vec<_> = providers
+            .iter()
+            .map(|p| scope.spawn(|| provider_results(p, &query)))
+            .collect();
+        handles
+            .into_iter()
+            .map(|h| h.join().expect("search worker thread panicked"))
+            .collect()
+    });
+    Ok(groups)
 }

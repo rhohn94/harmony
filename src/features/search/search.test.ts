@@ -59,23 +59,49 @@ describe("validate (ProviderDialog)", () => {
   });
 });
 
-// ── SearchResult link-only contract ──────────────────────────────────────────
+// ── ProviderResults preview contract (v0.16) ─────────────────────────────────
 
-describe("SearchResult shape", () => {
-  it("title equals providerName (no page fetch)", () => {
-    // The backend contract (file-search-design.md §3): title === providerName.
-    const result = {
-      providerId: 1,
-      providerName: "DuckDuckGo",
-      title: "DuckDuckGo",
-      url: "https://duckduckgo.com/?q=super%20mario",
-    };
-    expect(result.title).toBe(result.providerName);
+describe("ProviderResults shape", () => {
+  // The v0.16 backend returns one group per provider: the constructed
+  // searchUrl, the scraped preview items, and an optional error. Harmony opens
+  // links in the browser and never downloads content (download-search-design.md).
+  const group = {
+    providerId: 5,
+    providerName: "Internet Archive",
+    searchUrl: "https://archive.org/search?query=mario",
+    directDownload: false,
+    items: [
+      { title: "Super Mario (USA)", url: "https://archive.org/details/mario-usa" },
+      { title: "Mario Bros (World)", url: "https://archive.org/details/mario-world" },
+    ],
+    error: null,
+  };
+
+  it("always carries a constructed searchUrl as the browser fallback", () => {
+    expect(() => new URL(group.searchUrl)).not.toThrow();
+    expect(["http:", "https:"]).toContain(new URL(group.searchUrl).protocol);
   });
 
-  it("url is a valid http/https link", () => {
-    const url = "https://duckduckgo.com/?q=super%20mario";
-    expect(() => new URL(url)).not.toThrow();
-    expect(["http:", "https:"]).toContain(new URL(url).protocol);
+  it("each previewed item has its own title and http(s) url", () => {
+    for (const item of group.items) {
+      expect(item.title.length).toBeGreaterThan(0);
+      expect(["http:", "https:"]).toContain(new URL(item.url).protocol);
+    }
+  });
+
+  it("models a per-provider fetch failure without items", () => {
+    const failed = {
+      ...group,
+      items: [] as { title: string; url: string }[],
+      error: "network error: provider returned status 503",
+    };
+    expect(failed.items).toHaveLength(0);
+    expect(failed.error).toMatch(/network error/);
+    // The searchUrl still lets the user open the page in their browser.
+    expect(failed.searchUrl).toBeTruthy();
+  });
+
+  it("direct-download is an opt-in capability flag, off by default", () => {
+    expect(group.directDownload).toBe(false);
   });
 });

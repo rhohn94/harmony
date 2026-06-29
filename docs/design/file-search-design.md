@@ -20,12 +20,13 @@ system browser to see the search results.
 
 | Requirement | Rationale |
 |---|---|
-| **Links only — never auto-download** | The app is source-agnostic. It constructs and surfaces URLs; the user decides whether and what to follow. The backend never issues a network request on behalf of a search. |
-| **Never fetch the target URL server-side** | Prevents unintended data exfiltration, unexpected bandwidth use, and server-side parsing complexity. |
-| **Ships with empty provider list** | No provider is pre-bundled. Users add the services they trust. |
+| **Never download content for the user** | The app is source-agnostic. It surfaces results; the user decides whether and what to download, in their own browser. Harmony never fetches or stores a content file. *(Still in force.)* |
+| **~~Never fetch the target URL server-side~~** | *Superseded in v0.16 "Trove".* To preview what a provider found, the backend now fetches and scrapes the provider's **search-results page** (metadata only — never a content file), under strict safeguards. See [download-search-design.md](download-search-design.md) §2. |
+| **Ships with empty provider list** | No user provider is pre-bundled. Users add the services they trust (a small set of legal download sources is seeded). |
 
-These are not configuration toggles — they are design invariants enforced in
-`core/search/template.rs` and `commands/search.rs`.
+The first and third rows are design invariants. The second was relaxed in v0.16
+for the in-app result preview; the genuinely-load-bearing invariant — Harmony
+never downloads content for the user — is unchanged.
 
 ---
 

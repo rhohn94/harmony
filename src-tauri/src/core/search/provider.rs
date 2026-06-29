@@ -23,14 +23,17 @@ pub struct SearchProvider {
     pub kind: String,
 }
 
-/// A single search result — a constructed link for the UI to open in the
-/// system browser. The backend **never** fetches the URL server-side.
+/// A single search result link the UI opens in the system browser.
+///
+/// Note: the live IPC preview path (v0.16) is modelled by
+/// `commands::search::ProviderResults` / `SearchResultItem`, which carry the
+/// scraped per-item title + URL. This core type is the original link-only shape
+/// kept for reference; the backend previews provider result pages but never
+/// downloads the content itself.
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
 pub struct SearchResult {
     pub provider_id: i64,
     pub provider_name: String,
-    /// The title is the provider name (the app constructs the link only;
-    /// it does not fetch or parse the target page).
     pub title: String,
     /// The fully-constructed URL — open in the system browser.
     pub url: String,
