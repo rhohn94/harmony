@@ -20,6 +20,10 @@ pub struct SearchProvider {
     /// (links to legal homes for downloadable content). Free text; defaults to
     /// `"reference"` for user-added providers.
     pub kind: String,
+    /// Per-vendor opt-in for the future OPTIONAL direct-download feature (v0.16
+    /// scaffolding). `false` for every provider by default; v0.16 ships only the
+    /// flag and its UI, never an actual direct-download action.
+    pub direct_download: bool,
 }
 
 /// New-provider input (no id; assigned by SQLite).
@@ -28,6 +32,7 @@ pub struct NewSearchProvider {
     pub url_template: String,
     pub enabled: bool,
     pub kind: String,
+    pub direct_download: bool,
 }
 
 /// Repository over the `search_providers` table.
@@ -51,6 +56,7 @@ fn map_provider(row: &Row) -> rusqlite::Result<SearchProvider> {
         url_template: row.get("url_template")?,
         enabled: row.get::<_, i64>("enabled")? != 0,
         kind: row.get("kind")?,
+        direct_download: row.get::<_, i64>("direct_download")? != 0,
     })
 }
 
@@ -59,13 +65,14 @@ impl SearchProvidersRepo<'_> {
     pub fn add(&self, provider: &NewSearchProvider) -> AppResult<i64> {
         self.db.with_conn(|c| {
             c.execute(
-                "INSERT INTO search_providers (name, url_template, enabled, kind) \
-                 VALUES (?1, ?2, ?3, ?4)",
+                "INSERT INTO search_providers (name, url_template, enabled, kind, direct_download) \
+                 VALUES (?1, ?2, ?3, ?4, ?5)",
                 params![
                     provider.name,
                     provider.url_template,
                     provider.enabled as i64,
-                    provider.kind
+                    provider.kind,
+                    provider.direct_download as i64
                 ],
             )
             .map_err(map_sqlite)?;
@@ -139,6 +146,20 @@ impl SearchProvidersRepo<'_> {
         })
     }
 
+    /// Set a provider's `direct_download` capability flag (NotFound if absent).
+    /// v0.16 scaffolding for a future per-vendor direct-download feature.
+    pub fn set_direct_download(&self, id: i64, direct_download: bool) -> AppResult<()> {
+        self.db.with_conn(|c| {
+            let n = c
+                .execute(
+                    "UPDATE search_providers SET direct_download = ?1 WHERE id = ?2",
+                    params![direct_download as i64, id],
+                )
+                .map_err(map_sqlite)?;
+            require_affected(n)
+        })
+    }
+
     /// Delete a provider by id (NotFound if absent).
     pub fn delete(&self, id: i64) -> AppResult<()> {
         self.db.with_conn(|c| {
@@ -161,6 +182,7 @@ mod tests {
             url_template: "https://example.com/?q={query}".to_string(),
             enabled: true,
             kind: "reference".to_string(),
+            direct_download: false,
         }
     }
 
@@ -186,6 +208,30 @@ mod tests {
         let repo = SearchProvidersRepo::new(&db);
         let id = repo.add(&provider("My Custom Provider")).unwrap();
         assert_eq!(repo.get(id).unwrap().kind, "reference");
+    }
+
+    #[test]
+    fn direct_download_defaults_false_and_round_trips() {
+        // v0.16: the per-vendor capability flag is off by default and togglable.
+        let db = Db::open_in_memory().unwrap();
+        let repo = SearchProvidersRepo::new(&db);
+        let id = repo.add(&provider("My Custom Provider")).unwrap();
+        assert!(!repo.get(id).unwrap().direct_download);
+        repo.set_direct_download(id, true).unwrap();
+        assert!(repo.get(id).unwrap().direct_download);
+        repo.set_direct_download(id, false).unwrap();
+        assert!(!repo.get(id).unwrap().direct_download);
+    }
+
+    #[test]
+    fn seeded_download_providers_default_direct_download_off() {
+        // Migrations 004/007: seeded download providers ship with the future
+        // direct-download capability OFF until a maintainer opts a vendor in.
+        let db = Db::open_in_memory().unwrap();
+        let repo = SearchProvidersRepo::new(&db);
+        for p in repo.list().unwrap().into_iter().filter(|p| p.kind == "download") {
+            assert!(!p.direct_download, "{} should ship direct_download off", p.name);
+        }
     }
 
     #[test]

@@ -1,0 +1,11 @@
+-- 007_search_provider_direct_download.sql (v0.16 "Trove")
+-- Add a per-provider `direct_download` capability flag, scaffolding for a future
+-- OPTIONAL feature: letting Harmony download a chosen file directly from a vendor
+-- that has explicitly enabled it, instead of only opening the link in a browser.
+--
+-- v0.16 ships the flag and its plumbing/UI ONLY — no direct-download action is
+-- wired yet. The flag is OFF for every provider by default and must be enabled
+-- per vendor before any future direct-download path is offered. The standing
+-- contract is unchanged in v0.16: Harmony previews provider results and opens the
+-- user's chosen link in their browser; it never downloads game content itself.
+ALTER TABLE search_providers ADD COLUMN direct_download INTEGER NOT NULL DEFAULT 0;

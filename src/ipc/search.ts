@@ -1,12 +1,14 @@
 /**
- * File-search provider IPC wrappers (W9 / W17).
+ * File-search provider IPC wrappers (W9 / W17 / v0.16 "Trove").
  *
- * Design contract: `runSearch` returns constructed links ONLY — the backend
- * never fetches URLs server-side and never auto-downloads anything. The caller
- * is responsible for opening links in the system browser. Ships with an empty
- * provider list; users add providers manually.
+ * Design contract: v0.16 `runSearch` fetches each provider's public
+ * search-results page and returns a PREVIEW of the links it found, grouped by
+ * provider. The invariant that matters is unchanged — the backend never
+ * downloads the content itself; the caller opens the user's chosen link in the
+ * system browser. Ships with an empty user-provider list (seeded providers
+ * aside); users add their own manually.
  *
- * Master contract: architecture-design.md §2.5
+ * Master contract: architecture-design.md §2.5; download-search-design.md
  */
 
 import { invoke } from "./invoke";
@@ -26,19 +28,38 @@ export interface SearchProvider {
    * Older rows without the column read as `"reference"`.
    */
   kind: string;
+  /**
+   * Per-vendor opt-in for the future OPTIONAL direct-download feature (v0.16
+   * scaffolding). `false` by default; no direct-download action exists yet.
+   */
+  directDownload: boolean;
 }
 
 /**
- * A single search result — a constructed link to open in the system browser.
- * The backend never fetches or parses the target URL.
+ * A single scraped preview link from a provider's results page. The user opens
+ * `url` in the system browser; Harmony never downloads it.
  */
-export interface SearchResult {
+export interface SearchResultItem {
+  /** The scraped anchor text. */
+  title: string;
+  /** Fully-resolved absolute URL; pass to `openUrl()`. */
+  url: string;
+}
+
+/**
+ * The previewed results for one provider. `searchUrl` is the provider's
+ * constructed search-page link (always present, so the UI can offer "open the
+ * full results page" even when scraping is empty or fails). `items` are the
+ * scraped preview links; `error` is a per-provider fetch/parse failure message.
+ */
+export interface ProviderResults {
   providerId: number;
   providerName: string;
-  /** Equals `providerName` (the app only constructs links, never titles). */
-  title: string;
-  /** Fully-constructed URL; pass to `shell.open()` or equivalent. */
-  url: string;
+  searchUrl: string;
+  /** Whether this vendor has the future direct-download capability enabled. */
+  directDownload: boolean;
+  items: SearchResultItem[];
+  error: string | null;
 }
 
 // ── Typed wrappers ───────────────────────────────────────────────────────────
@@ -55,10 +76,12 @@ export function listProviders(): Promise<SearchProvider[]> {
 export function addProvider(args: {
   name: string;
   urlTemplate: string;
+  directDownload?: boolean;
 }): Promise<SearchProvider> {
   return invoke<SearchProvider>("add_provider", {
     name: args.name,
     urlTemplate: args.urlTemplate,
+    directDownload: args.directDownload ?? null,
   });
 }
 
@@ -71,12 +94,14 @@ export function updateProvider(args: {
   name?: string;
   urlTemplate?: string;
   enabled?: boolean;
+  directDownload?: boolean;
 }): Promise<SearchProvider> {
   return invoke<SearchProvider>("update_provider", {
     id: args.id,
     name: args.name ?? null,
     urlTemplate: args.urlTemplate ?? null,
     enabled: args.enabled ?? null,
+    directDownload: args.directDownload ?? null,
   });
 }
 
@@ -86,17 +111,19 @@ export function removeProvider(args: { id: number }): Promise<void> {
 }
 
 /**
- * Construct search links for `query`.
+ * Run a search and preview each provider's results.
  *
- * **Returns links only — never auto-downloads.** Open each result's `url` in
- * the system browser. If `providerId` is supplied, only that provider is used;
- * otherwise all enabled providers contribute one link each.
+ * Returns one {@link ProviderResults} group per provider, each holding the
+ * scraped preview links plus the provider's `searchUrl`. **Never downloads
+ * content** — open the user's chosen `url` in the system browser. If
+ * `providerId` is supplied, only that provider is used; otherwise all enabled
+ * providers contribute.
  */
 export function runSearch(args: {
   query: string;
   providerId?: number;
-}): Promise<SearchResult[]> {
-  return invoke<SearchResult[]>("run_search", {
+}): Promise<ProviderResults[]> {
+  return invoke<ProviderResults[]>("run_search", {
     query: args.query,
     providerId: args.providerId ?? null,
   });

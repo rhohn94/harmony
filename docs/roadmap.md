@@ -328,6 +328,35 @@ Plan: [`release-planning-v0.13.md`](release-planning-v0.13.md).
 
 ---
 
+## v0.16 — Trove
+
+**Theme:** See what you found before you go get it. Search stops being a bare
+link-out: Harmony now previews the candidate files each provider surfaces, in
+the app, and lets the user open the one they want in their browser — while never
+downloading anything itself.
+
+- **In-app result preview:** `run_search` fetches each enabled provider's public
+  search-results page, scrapes the candidate links from its HTML, and returns
+  them grouped per provider with the provider's own search-page link as a
+  fallback. Generic + source-agnostic (no per-site parsers), behind strict
+  safeguards (http(s)-only, 8 s timeout, 2 MiB body cap, 30-result cap,
+  concurrent per-provider fetch). The genuinely-load-bearing contract is intact:
+  Harmony **never downloads content** — the user opens their chosen link in
+  their browser.
+- **Per-vendor direct-download scaffolding:** a `direct_download` capability flag
+  (migration 007) plumbed through the repo, IPC DTOs, provider add/edit dialog,
+  and a clearly-disabled results marker — groundwork for a future, optional,
+  per-vendor direct-download feature. Ships off for every provider; no download
+  action is wired yet.
+- **Compliance & hygiene (carried in):** third-party GPL-3.0 license attribution
+  for the bundled EmulatorJS + cores (`THIRD-PARTY-NOTICES.md`), and an
+  isolation fix for the intermittently-flaky parallel `cargo test` suite.
+
+Design: [`download-search-design.md`](design/download-search-design.md) ·
+Plan: [`release-planning-v0.16.md`](release-planning-v0.16.md).
+
+---
+
 ## v0.15 — Arcade
 
 **Theme:** Play, live and in-page. Second of three grouped releases in the

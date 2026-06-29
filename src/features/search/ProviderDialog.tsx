@@ -15,6 +15,11 @@ import type { SearchProvider } from "../../ipc/search";
 export interface ProviderFormData {
   name: string;
   urlTemplate: string;
+  /**
+   * Per-vendor opt-in for the future OPTIONAL direct-download feature (v0.16
+   * scaffolding). Persisted, but no direct-download action exists yet.
+   */
+  directDownload: boolean;
 }
 
 interface ProviderDialogProps {
@@ -43,6 +48,9 @@ export function ProviderDialog({
 }: ProviderDialogProps) {
   const [name, setName] = useState(provider?.name ?? "");
   const [urlTemplate, setUrlTemplate] = useState(provider?.urlTemplate ?? "");
+  const [directDownload, setDirectDownload] = useState(
+    provider?.directDownload ?? false
+  );
   const [error, setError] = useState<string | null>(null);
   const nameRef = useRef<HTMLInputElement>(null);
 
@@ -51,6 +59,7 @@ export function ProviderDialog({
     if (open) {
       setName(provider?.name ?? "");
       setUrlTemplate(provider?.urlTemplate ?? "");
+      setDirectDownload(provider?.directDownload ?? false);
       setError(null);
     }
   }, [open, provider]);
@@ -68,7 +77,11 @@ export function ProviderDialog({
   }, [open]);
 
   function handleSave() {
-    const data: ProviderFormData = { name: name.trim(), urlTemplate: urlTemplate.trim() };
+    const data: ProviderFormData = {
+      name: name.trim(),
+      urlTemplate: urlTemplate.trim(),
+      directDownload,
+    };
     const err = validate(data);
     if (err) {
       setError(err);
@@ -134,6 +147,33 @@ export function ProviderDialog({
             />
           </AuraField>
         </div>
+
+        {/* v0.16 scaffolding: opt this vendor into the future direct-download
+            feature. Persisted now; no download action is wired yet. */}
+        <label
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 8,
+            fontSize: 12,
+            color: "var(--aura-on-surface-muted)",
+            cursor: "pointer",
+          }}
+        >
+          <input
+            name="provider-direct-download"
+            type="checkbox"
+            checked={directDownload}
+            onChange={(e) => setDirectDownload(e.target.checked)}
+            style={{ marginTop: 2 }}
+          />
+          <span>
+            Allow direct download from this vendor{" "}
+            <span style={{ opacity: 0.7 }}>
+              (experimental — not available yet)
+            </span>
+          </span>
+        </label>
 
         {error && (
           <p style={{ margin: 0, fontSize: 12, color: "var(--aura-error)" }}>
