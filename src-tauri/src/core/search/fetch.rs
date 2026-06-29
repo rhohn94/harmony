@@ -129,6 +129,12 @@ pub fn extract_links(html: &str, base_url: &str) -> Vec<ScrapedResult> {
         if title.is_empty() {
             continue;
         }
+        // v0.18: drop obvious page chrome (nav/pagination/legal/social) before it
+        // becomes a "result". Conservative — whole-string matches only, so a real
+        // title is never dropped.
+        if is_chrome_anchor(&title) {
+            continue;
+        }
         if !seen.insert(url.clone()) {
             continue;
         }
@@ -170,6 +176,40 @@ fn resolve_http_url(href: &str, base: Option<&reqwest::Url>) -> Option<String> {
         return None;
     }
     Some(resolved.to_string())
+}
+
+/// Minimum visible-title length to keep an anchor (drops single-character chrome
+/// like a "›" pagination arrow).
+const MIN_TITLE_LEN: usize = 2;
+
+/// Exact (whole-string, case-insensitive) anchor texts that are page chrome,
+/// never a result: navigation, account, pagination, legal, and social links.
+/// Matched against the full normalized title, so a real title that merely
+/// *contains* one of these words (e.g. "Home Alone") is unaffected.
+const CHROME_WORDS: &[&str] = &[
+    "home", "login", "log in", "logout", "log out", "sign in", "sign up",
+    "signin", "signup", "register", "account", "next", "previous", "prev",
+    "more", "back", "top", "menu", "search", "about", "contact", "privacy",
+    "terms", "help", "faq", "cart", "donate", "forum", "forums", "blog",
+    "rss", "twitter", "facebook", "discord", "reddit", "github", "download",
+    "downloads", "browse", "all", "view all", "see all", "read more",
+];
+
+/// True when `title` is page chrome that should not be surfaced as a result:
+/// a pure-numeric/short token (pagination), or an exact match for a known
+/// nav/legal/social word. Conservative by design — whole-string matches only.
+fn is_chrome_anchor(title: &str) -> bool {
+    let t = title.trim();
+    if t.chars().count() < MIN_TITLE_LEN {
+        return true;
+    }
+    // Pagination ordinals: "1", "23", "»" already caught by length; catch
+    // multi-digit page numbers here.
+    if t.chars().all(|c| c.is_ascii_digit()) {
+        return true;
+    }
+    let lower = t.to_ascii_lowercase();
+    CHROME_WORDS.contains(&lower.as_str())
 }
 
 /// Collapse internal whitespace, trim, and bound the length — anchor text often
@@ -255,6 +295,37 @@ mod tests {
         let html = "<a href=\"https://x.example.com/1\">  Super\n\t Mario  </a>";
         let out = extract_links(html, BASE);
         assert_eq!(out[0].title, "Super Mario");
+    }
+
+    #[test]
+    fn drops_chrome_and_pagination_anchors() {
+        // v0.18: nav/legal/social chrome and pagination must not become results,
+        // but a real title is kept even when it contains a chrome word.
+        let html = r#"
+            <a href="https://x.example.com/home">Home</a>
+            <a href="https://x.example.com/login">Login</a>
+            <a href="https://x.example.com/next">Next</a>
+            <a href="https://x.example.com/p2">2</a>
+            <a href="https://x.example.com/arrow">›</a>
+            <a href="https://x.example.com/privacy">Privacy</a>
+            <a href="https://x.example.com/game">Home Alone 2 (USA)</a>
+        "#;
+        let out = extract_links(html, BASE);
+        let titles: Vec<&str> = out.iter().map(|r| r.title.as_str()).collect();
+        assert_eq!(titles, vec!["Home Alone 2 (USA)"]);
+    }
+
+    #[test]
+    fn is_chrome_anchor_classifies_correctly() {
+        assert!(is_chrome_anchor("Home"));
+        assert!(is_chrome_anchor("  LOGIN "));
+        assert!(is_chrome_anchor("Sign In"));
+        assert!(is_chrome_anchor("12"));
+        assert!(is_chrome_anchor("›"));
+        // Real titles are kept, even ones containing a chrome word.
+        assert!(!is_chrome_anchor("Home Alone (USA)"));
+        assert!(!is_chrome_anchor("Contra"));
+        assert!(!is_chrome_anchor("Super Mario Bros. 3"));
     }
 
     #[test]

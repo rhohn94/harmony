@@ -65,13 +65,13 @@ export const MOCK_FIXTURES = {
 
   // --- Search (src/ipc/search.ts) — the built-in providers seeded by migration 003 ---
   list_providers: [
-    { id: 1, name: "MobyGames", urlTemplate: "https://www.mobygames.com/search/?q={query}", enabled: true, kind: "reference", directDownload: false },
-    { id: 2, name: "IGDB", urlTemplate: "https://www.igdb.com/search?type=1&q={query}", enabled: true, kind: "reference", directDownload: false },
-    { id: 3, name: "Wikipedia", urlTemplate: "https://en.wikipedia.org/w/index.php?search={query}", enabled: true, kind: "reference", directDownload: false },
-    { id: 4, name: "GameFAQs", urlTemplate: "https://gamefaqs.gamespot.com/search?game={query}", enabled: true, kind: "reference", directDownload: false },
+    { id: 1, name: "MobyGames", urlTemplate: "https://www.mobygames.com/search/?q={query}", enabled: true, kind: "reference", directDownload: false, composeFilters: false },
+    { id: 2, name: "IGDB", urlTemplate: "https://www.igdb.com/search?type=1&q={query}", enabled: true, kind: "reference", directDownload: false, composeFilters: false },
+    { id: 3, name: "Wikipedia", urlTemplate: "https://en.wikipedia.org/w/index.php?search={query}", enabled: true, kind: "reference", directDownload: false, composeFilters: false },
+    { id: 4, name: "GameFAQs", urlTemplate: "https://gamefaqs.gamespot.com/search?game={query}", enabled: true, kind: "reference", directDownload: false, composeFilters: false },
     // Download-oriented, links-only legal sources (v0.11 migration 004).
-    { id: 5, name: "Internet Archive", urlTemplate: "https://archive.org/search?query={query}", enabled: true, kind: "download", directDownload: false },
-    { id: 6, name: "itch.io", urlTemplate: "https://itch.io/search?q={query}", enabled: true, kind: "download", directDownload: false },
+    { id: 5, name: "Internet Archive", urlTemplate: "https://archive.org/search?query={query}", enabled: true, kind: "download", directDownload: false, composeFilters: false },
+    { id: 6, name: "itch.io", urlTemplate: "https://itch.io/search?q={query}", enabled: true, kind: "download", directDownload: false, composeFilters: false },
   ],
   // v0.16 preview shape: one ProviderResults group per provider, with scraped
   // items, the searchUrl fallback, and an optional per-provider error.
@@ -86,6 +86,9 @@ export const MOCK_FIXTURES = {
         { title: "Super Mario World (World)", url: "https://archive.org/details/smw-world" },
         { title: "Super Mario Bros. 3 (USA) (Rev A) [!].zip", url: "https://archive.org/details/smb3-usa-reva" },
         { title: "Super Mario Bros. 2 (Japan) [b]", url: "https://archive.org/details/smb2-jp" },
+        // v0.18: an unrelated title (no "mario" terms) — ranked last, badged as
+        // no match, and removed by "Hide unlikely matches".
+        { title: "Donkey Kong Country (USA)", url: "https://archive.org/details/dkc-usa" },
       ],
       error: null,
     },

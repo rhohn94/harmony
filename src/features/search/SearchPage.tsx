@@ -52,12 +52,39 @@ import {
   needsOpenConfirm,
 } from "./resultSelection";
 import type { GroupSelectionState } from "./resultSelection";
+import { rankItems, matchStrength, SEARCH_REGIONS } from "./resultRanking";
+import type { RankQuery, MatchStrength } from "./resultRanking";
+import { listConsoles } from "../../ipc/console";
+import type { ConsoleInfo } from "../../ipc/console";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface DialogState {
   open: boolean;
   provider?: SearchProvider;
+}
+
+// ── Result-visibility pipeline ───────────────────────────────────────────────
+
+/** The single source of truth for which rows of a group are shown, in order:
+ *  live filter → order (relevance ranking or title/scrape sort) → optional
+ *  hide-weak. Used both to render a group and to tally the toolbar totals, so
+ *  they never diverge. Pure. */
+function computeVisible(
+  items: SearchResultItem[],
+  filter: string,
+  sortKey: SortKey,
+  rankQuery: RankQuery,
+  hideWeak: boolean
+): SearchResultItem[] {
+  const filtered = filterItems(items, filter);
+  const ordered =
+    sortKey === "relevance"
+      ? rankItems(filtered, rankQuery)
+      : sortItems(filtered, sortKey);
+  return hideWeak
+    ? ordered.filter((i) => matchStrength(i, rankQuery) !== "none")
+    : ordered;
 }
 
 // ── Sub-components ───────────────────────────────────────────────────────────
@@ -119,6 +146,34 @@ function badgeColor(tone: Badge["tone"]): string {
   return "var(--aura-on-surface-muted)";
 }
 
+/** A relevance "Match"/"Partial" chip (v0.18) — indicates that a row matches
+ *  the searched-for game. `none`-strength rows render nothing. */
+function MatchBadge({ strength }: { strength: MatchStrength }) {
+  if (strength === "none") return null;
+  const strong = strength === "strong";
+  const color = strong ? "var(--aura-primary)" : "var(--aura-on-surface-muted)";
+  return (
+    <span
+      title={strong ? "Strong match for your search" : "Partial match for your search"}
+      style={{
+        fontSize: 10,
+        fontWeight: 700,
+        lineHeight: 1,
+        padding: "2px 5px",
+        borderRadius: 4,
+        border: `1px solid ${color}`,
+        background: strong ? "var(--harmony-provider-enabled-bg)" : "transparent",
+        color,
+        flexShrink: 0,
+        letterSpacing: "0.02em",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {strong ? "✓ Match" : "~ Partial"}
+    </span>
+  );
+}
+
 /** A compact chip for a title-parsed badge (region / revision / quality / type). */
 function BadgeChip({ badge }: { badge: Badge }) {
   const color = badgeColor(badge.tone);
@@ -148,10 +203,12 @@ function BadgeChip({ badge }: { badge: Badge }) {
 function ResultRow({
   result,
   selected,
+  strength,
   onToggleSelect,
 }: {
   result: SearchResultItem;
   selected: boolean;
+  strength: MatchStrength;
   onToggleSelect: (url: string) => void;
 }) {
   async function handleOpen() {
@@ -223,6 +280,7 @@ function ResultRow({
         >
           {result.title}
         </span>
+        <MatchBadge strength={strength} />
         {badges.map((b) => (
           <BadgeChip key={`${b.kind}:${b.label}`} badge={b} />
         ))}
@@ -307,8 +365,9 @@ function ProviderResultGroup({
   group,
   collapsed,
   onToggle,
+  visible,
+  rankQuery,
   filter,
-  sortKey,
   selected,
   onToggleItem,
   onToggleGroup,
@@ -316,8 +375,11 @@ function ProviderResultGroup({
   group: ProviderResults;
   collapsed: boolean;
   onToggle: () => void;
+  /** The rows actually shown (filter → order → hide-weak), computed by parent. */
+  visible: SearchResultItem[];
+  /** The executed search, for per-row match-strength badges. */
+  rankQuery: RankQuery;
   filter: string;
-  sortKey: SortKey;
   selected: ReadonlySet<string>;
   onToggleItem: (url: string) => void;
   onToggleGroup: (urls: string[]) => void;
@@ -327,8 +389,6 @@ function ProviderResultGroup({
   }
 
   const bodyId = `provider-group-${group.providerId}`;
-  // Filtered + sorted rows the user actually sees, and their selection state.
-  const visible = sortItems(filterItems(group.items, filter), sortKey);
   const visibleUrls = visible.map((i) => i.url);
   const selState = groupSelectionState(visibleUrls, selected);
   const filteredEmpty = group.items.length > 0 && visible.length === 0;
@@ -479,7 +539,9 @@ function ProviderResultGroup({
                   color: "var(--aura-on-surface-muted)",
                 }}
               >
-                No matches for “{filter}” here.
+                {filter.trim()
+                  ? `No matches for “${filter}” here.`
+                  : "No likely matches here (hidden by “Hide unlikely matches”)."}
               </p>
             ) : (
               <motion.ul
@@ -493,6 +555,7 @@ function ProviderResultGroup({
                     key={item.url}
                     result={item}
                     selected={selected.has(item.url)}
+                    strength={matchStrength(item, rankQuery)}
                     onToggleSelect={onToggleItem}
                   />
                 ))}
@@ -606,17 +669,28 @@ export function SearchPage() {
   const [filter, setFilter] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>(loadSortPref);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  // Structured search + relevance controls (v0.18): console/region filters, the
+  // hide-weak toggle, and the executed query captured for ranking.
+  const [consoles, setConsoles] = useState<ConsoleInfo[]>([]);
+  const [consoleKey, setConsoleKey] = useState("");
+  const [region, setRegion] = useState("");
+  const [hideWeak, setHideWeak] = useState(false);
+  const [rankQuery, setRankQuery] = useState<RankQuery>({ name: "" });
   const [running, setRunning] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [dialog, setDialog] = useState<DialogState>({ open: false });
   const queryRef = useRef<HTMLInputElement>(null);
   const didAutoRun = useRef(false);
 
-  // Load providers on mount.
+  // Load providers + the console catalog (for the structured-search select) on
+  // mount. A console-list failure simply leaves the select empty.
   useEffect(() => {
     listProviders()
       .then(setProviders)
       .catch(() => setProviders([]));
+    listConsoles()
+      .then(setConsoles)
+      .catch(() => setConsoles([]));
   }, []);
 
   // Run search: collect results from enabled providers, grouped by provider.
@@ -626,15 +700,35 @@ export function SearchPage() {
     const active = providers.filter((p) => p.enabled);
     if (active.length === 0) return;
 
+    // Resolve the selected console into a short token for the backend compose
+    // (e.g. "SNES") and richer tokens for client-side ranking (name + abbr +
+    // key, so any of them matches a result title).
+    const selectedConsole = consoles.find((c) => c.key === consoleKey);
+    const consoleComposeToken = selectedConsole?.abbreviation ?? "";
+    const consoleRankTokens = selectedConsole
+      ? `${selectedConsole.name} ${selectedConsole.abbreviation} ${selectedConsole.key}`
+      : "";
+    const reg = region.trim();
+
     setRunning(true);
     setSearchError(null);
     setResults(null);
-    // A new search is a fresh browse: clear the filter and any selection.
+    // A new search is a fresh browse: clear the filter and any selection, and
+    // capture the executed query for relevance ranking + Match badges.
     setFilter("");
     setSelected(new Set());
+    setRankQuery({
+      name: q,
+      console: consoleRankTokens || undefined,
+      region: reg || undefined,
+    });
 
     try {
-      const all = await runSearch({ query: q });
+      const all = await runSearch({
+        query: q,
+        console: consoleComposeToken || undefined,
+        region: reg || undefined,
+      });
       setResults(all);
       // Start with empty/errored groups folded; populated providers stay open.
       setCollapsed(
@@ -646,7 +740,7 @@ export function SearchPage() {
     } finally {
       setRunning(false);
     }
-  }, [query, providers]);
+  }, [query, providers, consoles, consoleKey, region]);
 
   // Auto-run a search that arrived pre-filled via navigation state ("Find
   // downloads for this title"), once providers have loaded so enabled ones
@@ -686,6 +780,7 @@ export function SearchPage() {
         name: data.name,
         urlTemplate: data.urlTemplate,
         directDownload: data.directDownload,
+        composeFilters: data.composeFilters,
       });
       setProviders((prev) =>
         prev.map((x) => (x.id === dialog.provider!.id ? updated : x))
@@ -745,10 +840,15 @@ export function SearchPage() {
   const hasProviders = providers.length > 0;
   const activeCount = providers.filter((p) => p.enabled).length;
   const totalItems = results?.reduce((n, g) => n + g.items.length, 0) ?? 0;
-  // How many links survive the current filter (drives the toolbar summary).
-  const filteredTotal =
-    results?.reduce((n, g) => n + filterItems(g.items, filter).length, 0) ?? 0;
-  const filtering = filter.trim().length > 0;
+  // Precompute the visible rows per group (filter → order → hide-weak) once, as
+  // the single source of truth for both rendering and the toolbar summary.
+  const groupViews =
+    results?.map((g) => ({
+      group: g,
+      visible: computeVisible(g.items, filter, sortKey, rankQuery, hideWeak),
+    })) ?? [];
+  const visibleTotal = groupViews.reduce((n, gv) => n + gv.visible.length, 0);
+  const narrowing = filter.trim().length > 0 || hideWeak;
 
   return (
     <section
@@ -764,20 +864,52 @@ export function SearchPage() {
         <span aria-hidden>⬇</span> marks download sources.
       </p>
 
-      {/* Query + run */}
-      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-        <AuraField style={{ flex: 1 }}>
+      {/* Query + structured filters + run */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+        <AuraField style={{ flex: 1, minWidth: 200 }}>
           <input
             ref={queryRef}
             name="search-query"
             className="harmony-input"
             type="search"
             value={query}
-            placeholder="Search…"
+            placeholder="Game name…"
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleQueryKey}
           />
         </AuraField>
+        {/* Structured filters (v0.18): always feed relevance ranking; appended
+            to a provider's query only when it has compose-filters enabled. */}
+        <select
+          name="search-console"
+          className="harmony-input"
+          aria-label="Console"
+          value={consoleKey}
+          onChange={(e) => setConsoleKey(e.target.value)}
+          style={{ fontSize: 13, padding: "6px 8px", maxWidth: 180 }}
+        >
+          <option value="">Any console</option>
+          {consoles.map((c) => (
+            <option key={c.key} value={c.key}>
+              {c.abbreviation || c.name}
+            </option>
+          ))}
+        </select>
+        <select
+          name="search-region"
+          className="harmony-input"
+          aria-label="Region"
+          value={region}
+          onChange={(e) => setRegion(e.target.value)}
+          style={{ fontSize: 13, padding: "6px 8px", maxWidth: 150 }}
+        >
+          <option value="">Any region</option>
+          {SEARCH_REGIONS.map((r) => (
+            <option key={r} value={r}>
+              {r}
+            </option>
+          ))}
+        </select>
         <AuraButton
           variant="primary"
           onClick={handleSearch}
@@ -890,6 +1022,27 @@ export function SearchPage() {
                       ))}
                     </select>
                   </label>
+                  {/* Hide-weak (v0.18): off by default; weak matches are
+                      otherwise demoted to the bottom, never hidden silently. */}
+                  <label
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      fontSize: 12,
+                      color: "var(--aura-on-surface-muted)",
+                      cursor: "pointer",
+                    }}
+                    title="Hide rows that don't match your search (kept, just hidden)"
+                  >
+                    <input
+                      name="result-hide-weak"
+                      type="checkbox"
+                      checked={hideWeak}
+                      onChange={(e) => setHideWeak(e.target.checked)}
+                    />
+                    Hide unlikely matches
+                  </label>
                   {results.length > 1 && (
                     <>
                       <button
@@ -941,20 +1094,21 @@ export function SearchPage() {
                       color: "var(--aura-on-surface-muted)",
                     }}
                   >
-                    {filtering
-                      ? `${filteredTotal} of ${totalItems} links match`
+                    {narrowing
+                      ? `${visibleTotal} of ${totalItems} links shown`
                       : `${totalItems} ${totalItems === 1 ? "link" : "links"} across ${results.length} ${results.length === 1 ? "provider" : "providers"}`}
                   </span>
                 </div>
               )}
-              {results.map((group) => (
+              {groupViews.map(({ group, visible }) => (
                 <ProviderResultGroup
                   key={group.providerId}
                   group={group}
                   collapsed={collapsed.has(group.providerId)}
                   onToggle={() => toggleGroup(group.providerId)}
+                  visible={visible}
+                  rankQuery={rankQuery}
                   filter={filter}
-                  sortKey={sortKey}
                   selected={selected}
                   onToggleItem={toggleItem}
                   onToggleGroup={toggleGroupSelection}
