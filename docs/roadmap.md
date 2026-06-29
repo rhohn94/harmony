@@ -328,6 +328,32 @@ Plan: [`release-planning-v0.13.md`](release-planning-v0.13.md).
 
 ---
 
+## v0.18 — Focus
+
+**Theme:** Make results *relevant*. v0.16/v0.17 preview and browse what a
+provider returned, but the scrape grabs every link on the page in DOM order with
+no sense of what was searched. v0.18 drops the junk at the scrape, ranks results
+so the searched-for game leads and is indicated with a Match badge, and lets
+search specify structured fields (console, region) beyond the bare game name —
+the no-download contract untouched.
+
+- **Junk-link filtering:** the scraper drops obvious page chrome (pagination,
+  exact-match nav/legal/social words like Home/Login/Next, too-short anchors)
+  before it becomes a result — conservatively, never a real game title.
+- **Relevance ranking + Match badge:** a new Relevance sort (now the default)
+  orders each provider's rows by query relevance, and strongly/partially
+  matching rows carry a Match / Partial chip so the searched-for game is
+  visibly indicated. Weak matches are demoted, with an off-by-default
+  "Hide unlikely matches" toggle.
+- **Structured search fields:** a console select (from the console catalog) and
+  a region select feed the relevance ranking, and — per a new per-provider
+  opt-in — are composed into that provider's query to narrow at the source.
+
+Design: [`download-browsing-ux-design.md`](design/download-browsing-ux-design.md) §7 ·
+Plan: [`release-planning-v0.18.md`](release-planning-v0.18.md).
+
+---
+
 ## v0.17 — Sift
 
 **Theme:** Make the v0.16 preview *browsable*. Once Harmony shows the candidate

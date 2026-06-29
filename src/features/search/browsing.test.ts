@@ -121,8 +121,8 @@ describe("resultSort persistence", () => {
     } as Storage;
   });
 
-  it("defaults to found when nothing is stored", () => {
-    expect(loadSortPref()).toBe("found");
+  it("defaults to relevance when nothing is stored", () => {
+    expect(loadSortPref()).toBe("relevance");
   });
 
   it("round-trips a saved preference", () => {
@@ -132,7 +132,7 @@ describe("resultSort persistence", () => {
 
   it("ignores a corrupted stored value", () => {
     globalThis.localStorage.setItem("harmony.search.sort", "nonsense");
-    expect(loadSortPref()).toBe("found");
+    expect(loadSortPref()).toBe("relevance");
   });
 });
 

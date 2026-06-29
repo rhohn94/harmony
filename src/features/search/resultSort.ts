@@ -7,14 +7,22 @@
  * title key. Framework-free so the comparators are unit-testable in node.
  */
 
-/** The sort orderings offered in the results toolbar. */
-export type SortKey = "found" | "title-asc" | "title-desc";
+/** The sort orderings offered in the results toolbar. "relevance" (v0.18) is
+ *  query-aware and applied by the view via {@link rankItems}, not by
+ *  {@link sortItems} (which has no query); the others are title/scrape order. */
+export type SortKey = "relevance" | "found" | "title-asc" | "title-desc";
 
-/** All keys, in toolbar order. */
-export const SORT_KEYS: readonly SortKey[] = ["found", "title-asc", "title-desc"];
+/** All keys, in toolbar order (Relevance leads — it is the default). */
+export const SORT_KEYS: readonly SortKey[] = [
+  "relevance",
+  "found",
+  "title-asc",
+  "title-desc",
+];
 
 /** Human labels for the sort control. */
 export const SORT_LABELS: Record<SortKey, string> = {
+  relevance: "Relevance",
   found: "Found",
   "title-asc": "Title A→Z",
   "title-desc": "Title Z→A",
@@ -29,11 +37,12 @@ interface Titled {
   title: string;
 }
 
-/** Sort `items` by `key`, stably. "found" returns a shallow copy in the
- *  original order; the title keys compare case- and accent-insensitively with
- *  natural numeric ordering, breaking ties by original index. */
+/** Sort `items` by `key`, stably. "found" (and "relevance", which the view
+ *  re-orders via `rankItems`) return a shallow copy in the original order; the
+ *  title keys compare case- and accent-insensitively with natural numeric
+ *  ordering, breaking ties by original index. */
 export function sortItems<T extends Titled>(items: T[], key: SortKey): T[] {
-  if (key === "found") return items.slice();
+  if (key === "found" || key === "relevance") return items.slice();
   const dir = key === "title-asc" ? 1 : -1;
   return items
     .map((item, index) => ({ item, index }))
@@ -51,8 +60,9 @@ export function sortItems<T extends Titled>(items: T[], key: SortKey): T[] {
 
 const SORT_PREF_KEY = "harmony.search.sort";
 
-/** Load the saved sort preference, defaulting to "found" when absent, invalid,
- *  or when localStorage is unavailable (e.g. a non-browser test env). */
+/** Load the saved sort preference, defaulting to "relevance" (v0.18) when
+ *  absent, invalid, or when localStorage is unavailable (e.g. a non-browser
+ *  test env). */
 export function loadSortPref(): SortKey {
   try {
     const raw = globalThis.localStorage?.getItem(SORT_PREF_KEY);
@@ -60,7 +70,7 @@ export function loadSortPref(): SortKey {
   } catch {
     // Ignore storage access errors (private mode, disabled, SSR/test).
   }
-  return "found";
+  return "relevance";
 }
 
 /** Persist the sort preference; a storage failure is swallowed (non-critical). */

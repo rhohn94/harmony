@@ -24,6 +24,10 @@ pub struct SearchProvider {
     /// scaffolding). `false` for every provider by default; v0.16 ships only the
     /// flag and its UI, never an actual direct-download action.
     pub direct_download: bool,
+    /// Per-vendor opt-in (v0.18): when `true`, the structured search filters
+    /// (console, region) are appended to this provider's query before
+    /// substitution. `false` by default — the bare game name is searched.
+    pub compose_filters: bool,
 }
 
 /// New-provider input (no id; assigned by SQLite).
@@ -33,6 +37,7 @@ pub struct NewSearchProvider {
     pub enabled: bool,
     pub kind: String,
     pub direct_download: bool,
+    pub compose_filters: bool,
 }
 
 /// Repository over the `search_providers` table.
@@ -57,6 +62,7 @@ fn map_provider(row: &Row) -> rusqlite::Result<SearchProvider> {
         enabled: row.get::<_, i64>("enabled")? != 0,
         kind: row.get("kind")?,
         direct_download: row.get::<_, i64>("direct_download")? != 0,
+        compose_filters: row.get::<_, i64>("compose_filters")? != 0,
     })
 }
 
@@ -65,14 +71,16 @@ impl SearchProvidersRepo<'_> {
     pub fn add(&self, provider: &NewSearchProvider) -> AppResult<i64> {
         self.db.with_conn(|c| {
             c.execute(
-                "INSERT INTO search_providers (name, url_template, enabled, kind, direct_download) \
-                 VALUES (?1, ?2, ?3, ?4, ?5)",
+                "INSERT INTO search_providers \
+                 (name, url_template, enabled, kind, direct_download, compose_filters) \
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
                 params![
                     provider.name,
                     provider.url_template,
                     provider.enabled as i64,
                     provider.kind,
-                    provider.direct_download as i64
+                    provider.direct_download as i64,
+                    provider.compose_filters as i64
                 ],
             )
             .map_err(map_sqlite)?;
@@ -160,6 +168,20 @@ impl SearchProvidersRepo<'_> {
         })
     }
 
+    /// Set a provider's `compose_filters` flag (NotFound if absent). v0.18:
+    /// controls whether structured search filters are appended to its query.
+    pub fn set_compose_filters(&self, id: i64, compose_filters: bool) -> AppResult<()> {
+        self.db.with_conn(|c| {
+            let n = c
+                .execute(
+                    "UPDATE search_providers SET compose_filters = ?1 WHERE id = ?2",
+                    params![compose_filters as i64, id],
+                )
+                .map_err(map_sqlite)?;
+            require_affected(n)
+        })
+    }
+
     /// Delete a provider by id (NotFound if absent).
     pub fn delete(&self, id: i64) -> AppResult<()> {
         self.db.with_conn(|c| {
@@ -183,6 +205,7 @@ mod tests {
             enabled: true,
             kind: "reference".to_string(),
             direct_download: false,
+            compose_filters: false,
         }
     }
 
@@ -221,6 +244,20 @@ mod tests {
         assert!(repo.get(id).unwrap().direct_download);
         repo.set_direct_download(id, false).unwrap();
         assert!(!repo.get(id).unwrap().direct_download);
+    }
+
+    #[test]
+    fn compose_filters_defaults_false_and_round_trips() {
+        // v0.18: structured-filter composition is opt-in per provider, off by
+        // default, and togglable.
+        let db = Db::open_in_memory().unwrap();
+        let repo = SearchProvidersRepo::new(&db);
+        let id = repo.add(&provider("My Custom Provider")).unwrap();
+        assert!(!repo.get(id).unwrap().compose_filters);
+        repo.set_compose_filters(id, true).unwrap();
+        assert!(repo.get(id).unwrap().compose_filters);
+        repo.set_compose_filters(id, false).unwrap();
+        assert!(!repo.get(id).unwrap().compose_filters);
     }
 
     #[test]

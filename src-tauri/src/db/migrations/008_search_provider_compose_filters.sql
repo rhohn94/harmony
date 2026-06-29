@@ -1,0 +1,14 @@
+-- 008_search_provider_compose_filters.sql (v0.18 "Focus")
+-- Add a per-provider `compose_filters` flag controlling whether the structured
+-- search filters (console, region) are appended to THIS provider's query before
+-- substitution, narrowing the search at the source.
+--
+-- Off by default for every provider: appending e.g. "SNES" to a site whose
+-- result titles never carry the console name would shrink its hits. Providers
+-- whose listings include console/region in their searchable text can opt in via
+-- the provider editor. The client-side relevance ranking always uses the
+-- structured filters regardless of this flag.
+--
+-- The standing contract is unchanged: Harmony only fetches each provider's
+-- public search-results HTML to preview links; it never downloads game content.
+ALTER TABLE search_providers ADD COLUMN compose_filters INTEGER NOT NULL DEFAULT 0;

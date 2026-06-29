@@ -45,6 +45,10 @@ pub struct SearchProvider {
     /// scaffolding). `false` by default; no direct-download action exists yet.
     #[serde(rename = "directDownload")]
     pub direct_download: bool,
+    /// Per-vendor opt-in (v0.18): append the structured search filters
+    /// (console, region) to this provider's query before substitution.
+    #[serde(rename = "composeFilters")]
+    pub compose_filters: bool,
 }
 
 /// A single scraped preview link from a provider's results page (mirrors TS
@@ -85,7 +89,29 @@ fn to_ipc(p: crate::db::repo::search_providers::SearchProvider) -> SearchProvide
         enabled: p.enabled,
         kind: p.kind,
         direct_download: p.direct_download,
+        compose_filters: p.compose_filters,
     }
+}
+
+/// Build the effective query for one provider. When the provider opted into
+/// filter composition (v0.18), the non-empty structured filters (console,
+/// region) are appended to the game-name query, narrowing the search at the
+/// source; otherwise the bare game name is used.
+fn effective_query(query: &str, console: &str, region: &str, compose: bool) -> String {
+    if !compose {
+        return query.to_string();
+    }
+    let mut parts: Vec<&str> = vec![query.trim()];
+    for filter in [console.trim(), region.trim()] {
+        if !filter.is_empty() {
+            parts.push(filter);
+        }
+    }
+    parts
+        .into_iter()
+        .filter(|s| !s.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 /// Build one provider's preview group: substitute the query into its template,
@@ -94,8 +120,11 @@ fn to_ipc(p: crate::db::repo::search_providers::SearchProvider) -> SearchProvide
 fn provider_results(
     p: &crate::db::repo::search_providers::SearchProvider,
     query: &str,
+    console: &str,
+    region: &str,
 ) -> ProviderResults {
-    let search_url = match template::substitute(&p.url_template, query) {
+    let effective = effective_query(query, console, region, p.compose_filters);
+    let search_url = match template::substitute(&p.url_template, &effective) {
         Ok(url) => url,
         Err(e) => {
             return ProviderResults {
@@ -147,6 +176,7 @@ pub fn add_provider(
     name: String,
     url_template: String,
     direct_download: Option<bool>,
+    compose_filters: Option<bool>,
     db: State<'_, Db>,
 ) -> AppResult<SearchProvider> {
     provider_core::validate_template(&url_template)?;
@@ -160,6 +190,8 @@ pub fn add_provider(
         kind: "reference".to_string(),
         // Direct download is opt-in per vendor; off unless explicitly set.
         direct_download: direct_download.unwrap_or(false),
+        // Filter composition is opt-in per vendor (v0.18); off by default.
+        compose_filters: compose_filters.unwrap_or(false),
     })?;
     repo.get(id).map(to_ipc)
 }
@@ -172,6 +204,7 @@ pub fn update_provider(
     url_template: Option<String>,
     enabled: Option<bool>,
     direct_download: Option<bool>,
+    compose_filters: Option<bool>,
     db: State<'_, Db>,
 ) -> AppResult<SearchProvider> {
     if let Some(ref t) = url_template {
@@ -189,6 +222,9 @@ pub fn update_provider(
     }
     if let Some(d) = direct_download {
         repo.set_direct_download(id, d)?;
+    }
+    if let Some(c) = compose_filters {
+        repo.set_compose_filters(id, c)?;
     }
     repo.get(id).map(to_ipc)
 }
@@ -212,12 +248,16 @@ pub fn remove_provider(id: i64, db: State<'_, Db>) -> AppResult<()> {
 #[tauri::command]
 pub fn run_search(
     query: String,
+    console: Option<String>,
+    region: Option<String>,
     provider_id: Option<i64>,
     db: State<'_, Db>,
 ) -> AppResult<Vec<ProviderResults>> {
     if query.trim().is_empty() {
         return Err(AppError::Validation("query must not be empty".to_string()));
     }
+    let console = console.unwrap_or_default();
+    let region = region.unwrap_or_default();
     let repo = SearchProvidersRepo::new(db.inner());
     let providers = if let Some(pid) = provider_id {
         vec![repo.get(pid)?]
@@ -230,9 +270,10 @@ pub fn run_search(
     // scraper's HTML types never cross the thread boundary (only the owned
     // `ProviderResults` does), so a scoped thread per provider is safe.
     let groups = std::thread::scope(|scope| {
+        let (query, console, region) = (&query, &console, &region);
         let handles: Vec<_> = providers
             .iter()
-            .map(|p| scope.spawn(|| provider_results(p, &query)))
+            .map(|p| scope.spawn(|| provider_results(p, query, console, region)))
             .collect();
         handles
             .into_iter()
@@ -240,4 +281,37 @@ pub fn run_search(
             .collect()
     });
     Ok(groups)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::effective_query;
+
+    #[test]
+    fn no_compose_returns_bare_query() {
+        assert_eq!(effective_query("super mario", "SNES", "USA", false), "super mario");
+    }
+
+    #[test]
+    fn compose_appends_non_empty_filters() {
+        assert_eq!(
+            effective_query("super mario", "SNES", "USA", true),
+            "super mario SNES USA"
+        );
+    }
+
+    #[test]
+    fn compose_skips_empty_filters() {
+        assert_eq!(effective_query("zelda", "", "", true), "zelda");
+        assert_eq!(effective_query("zelda", "N64", "", true), "zelda N64");
+        assert_eq!(effective_query("zelda", "", "EUR", true), "zelda EUR");
+    }
+
+    #[test]
+    fn compose_trims_whitespace() {
+        assert_eq!(
+            effective_query("  contra  ", "  NES  ", "  USA  ", true),
+            "contra NES USA"
+        );
+    }
 }

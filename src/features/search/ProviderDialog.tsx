@@ -20,6 +20,11 @@ export interface ProviderFormData {
    * scaffolding). Persisted, but no direct-download action exists yet.
    */
   directDownload: boolean;
+  /**
+   * Per-vendor opt-in (v0.18): append the structured search filters (console,
+   * region) to this provider's query before substitution.
+   */
+  composeFilters: boolean;
 }
 
 interface ProviderDialogProps {
@@ -51,6 +56,9 @@ export function ProviderDialog({
   const [directDownload, setDirectDownload] = useState(
     provider?.directDownload ?? false
   );
+  const [composeFilters, setComposeFilters] = useState(
+    provider?.composeFilters ?? false
+  );
   const [error, setError] = useState<string | null>(null);
   const nameRef = useRef<HTMLInputElement>(null);
 
@@ -60,6 +68,7 @@ export function ProviderDialog({
       setName(provider?.name ?? "");
       setUrlTemplate(provider?.urlTemplate ?? "");
       setDirectDownload(provider?.directDownload ?? false);
+      setComposeFilters(provider?.composeFilters ?? false);
       setError(null);
     }
   }, [open, provider]);
@@ -81,6 +90,7 @@ export function ProviderDialog({
       name: name.trim(),
       urlTemplate: urlTemplate.trim(),
       directDownload,
+      composeFilters,
     };
     const err = validate(data);
     if (err) {
@@ -171,6 +181,34 @@ export function ProviderDialog({
             Allow direct download from this vendor{" "}
             <span style={{ opacity: 0.7 }}>
               (experimental — not available yet)
+            </span>
+          </span>
+        </label>
+
+        {/* v0.18: opt this vendor into appending the structured search filters
+            (console, region) to its query, narrowing the search at the source. */}
+        <label
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 8,
+            fontSize: 12,
+            color: "var(--aura-on-surface-muted)",
+            cursor: "pointer",
+          }}
+        >
+          <input
+            name="provider-compose-filters"
+            type="checkbox"
+            checked={composeFilters}
+            onChange={(e) => setComposeFilters(e.target.checked)}
+            style={{ marginTop: 2 }}
+          />
+          <span>
+            Append search filters (console / region) to this provider's query{" "}
+            <span style={{ opacity: 0.7 }}>
+              (narrows at the source — leave off if this site's listings don't
+              name the console)
             </span>
           </span>
         </label>

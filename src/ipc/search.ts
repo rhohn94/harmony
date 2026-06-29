@@ -33,6 +33,12 @@ export interface SearchProvider {
    * scaffolding). `false` by default; no direct-download action exists yet.
    */
   directDownload: boolean;
+  /**
+   * Per-vendor opt-in (v0.18): when `true`, the structured search filters
+   * (console, region) are appended to this provider's query before
+   * substitution. `false` by default — the bare game name is searched.
+   */
+  composeFilters: boolean;
 }
 
 /**
@@ -77,11 +83,13 @@ export function addProvider(args: {
   name: string;
   urlTemplate: string;
   directDownload?: boolean;
+  composeFilters?: boolean;
 }): Promise<SearchProvider> {
   return invoke<SearchProvider>("add_provider", {
     name: args.name,
     urlTemplate: args.urlTemplate,
     directDownload: args.directDownload ?? null,
+    composeFilters: args.composeFilters ?? null,
   });
 }
 
@@ -95,6 +103,7 @@ export function updateProvider(args: {
   urlTemplate?: string;
   enabled?: boolean;
   directDownload?: boolean;
+  composeFilters?: boolean;
 }): Promise<SearchProvider> {
   return invoke<SearchProvider>("update_provider", {
     id: args.id,
@@ -102,6 +111,7 @@ export function updateProvider(args: {
     urlTemplate: args.urlTemplate ?? null,
     enabled: args.enabled ?? null,
     directDownload: args.directDownload ?? null,
+    composeFilters: args.composeFilters ?? null,
   });
 }
 
@@ -118,13 +128,21 @@ export function removeProvider(args: { id: number }): Promise<void> {
  * content** — open the user's chosen `url` in the system browser. If
  * `providerId` is supplied, only that provider is used; otherwise all enabled
  * providers contribute.
+ *
+ * `console`/`region` are the structured search filters (v0.18). They are
+ * appended to a provider's query only when that provider has `composeFilters`
+ * enabled; the frontend always uses them for client-side relevance ranking.
  */
 export function runSearch(args: {
   query: string;
+  console?: string;
+  region?: string;
   providerId?: number;
 }): Promise<ProviderResults[]> {
   return invoke<ProviderResults[]>("run_search", {
     query: args.query,
+    console: args.console ?? null,
+    region: args.region ?? null,
     providerId: args.providerId ?? null,
   });
 }
