@@ -191,7 +191,7 @@ zero results) — nothing scope-trimmed under that rule.
 
 | Branch | Design doc | Implemented | Reviewed | Merged into version/0.21 |
 |---|---|---|---|---|
-| `feat/w210-ffi-core-lifecycle` (W210) | ☑ | ☐ | ☐ | ☐ |
+| `feat/w210-ffi-core-lifecycle` (W210) | ☑ | ☑ | ☐ | ☑ |
 | `feat/w211-callback-wiring` (W211) | ☑ | ☐ | ☐ | ☐ |
 | `feat/w212-runtime-cpal-audio` (W212) | ☑ | ☐ | ☐ | ☐ |
 | `feat/w213-core-path-resolution` (W213) | ☑ | ☐ | ☐ | ☐ |
