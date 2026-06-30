@@ -202,7 +202,7 @@ zero results) — nothing scope-trimmed under that rule.
 |---|---|---|---|---|
 | `feat/w214-frame-delivery` (W214) | ☑ | ☑ | ☐ | ☑ |
 | `feat/w215-flag-fallback-switch` (W215) | ☑ | ☑ | ☐ | ☑ |
-| `feat/w216-input-mapping` (W216) | ☑ | ☐ | ☐ | ☐ |
+| `feat/w216-input-mapping` (W216) | ☑ | ☑ | ☐ | ☑ |
 | `feat/w217-tests-docs-release` (W217) | n/a | ☐ | ☐ | ☐ |
 
 ### Follow-ups discovered during implementation
