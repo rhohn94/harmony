@@ -328,6 +328,30 @@ Plan: [`release-planning-v0.13.md`](release-planning-v0.13.md).
 
 ---
 
+## v0.21 — Bedrock
+
+**Theme:** Host the `fceumm` NES core natively (FFI via `libloading`) instead
+of in EmulatorJS/WASM, to fix the Web Audio cold-start audio garble
+([#15](https://github.com/rhohn94/harmony/issues/15)) and cut load time at the
+root. Ships behind a flag; EmulatorJS stays the path for every other system
+and as the automatic fallback if native init fails.
+
+- **Native core hosting:** hand-rolled libretro FFI (no maintained Rust crate
+  hosts prebuilt cores — confirmed by research) loads the already-installed
+  `fceumm` `.dylib` (reusing the v0.7 core-install pipeline, no new bundling
+  work) and runs it directly in the Rust backend.
+- **Native audio:** `cpal`/CoreAudio output fed by a ring buffer from the
+  core's audio callback — no Web Audio, no cold-start garble.
+- **Frame delivery:** decoded frames pushed to a `<canvas>` via Tauri IPC.
+- **Boundary:** NES-only proof this release; broader core coverage, save
+  states, a native NSView overlay, and the preview-then-play attract mode are
+  explicit follow-ups, not built here.
+
+Design: [`native-emulation-design.md`](design/native-emulation-design.md) ·
+Plan: [`release-planning-v0.21.md`](release-planning-v0.21.md).
+
+---
+
 ## v0.20 — Atlas
 
 **Theme:** Make adding a provider first-class. Rather than hand-crafting URL
