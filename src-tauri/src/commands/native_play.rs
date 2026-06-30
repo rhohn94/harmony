@@ -1,10 +1,10 @@
-//! Native play IPC (v0.21 "Bedrock") — start/stop a native libretro core
-//! session and pull decoded RGBA frames for the frontend's `<canvas>`.
-//! Mirrors `commands::play`'s shape (in-page EmulatorJS) but for the native
-//! hosting path; see docs/design/native-emulation-design.md §3/§4. Input
-//! delivery (W216) and the EmulatorJS-fallback flag (W215) build on top of
-//! this — this module is frame delivery only.
+//! Native play IPC (v0.21 "Bedrock") — the opt-in feature flag (W215),
+//! start/stop a native libretro core session, and pull decoded RGBA frames
+//! for the frontend's `<canvas>` (W214). Mirrors `commands::play`'s shape
+//! (in-page EmulatorJS) but for the native hosting path; see
+//! docs/design/native-emulation-design.md §3/§4. Input delivery is W216.
 
+use crate::config::{paths::Paths, AppConfig};
 use crate::db::repo::library::LibraryRepo;
 use crate::db::repo::Repository;
 use crate::db::Db;
@@ -15,6 +15,24 @@ use serde::Serialize;
 use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::State;
+
+/// Whether native hosting is enabled (`AppConfig::native_play_enabled`,
+/// off by default). The frontend's runtime switch (`PlaySwitch.tsx`) is the
+/// primary gate, but `start_native_play` re-checks this too — defense in
+/// depth against any other caller bypassing the switch.
+#[tauri::command]
+pub fn get_native_play_enabled() -> AppResult<bool> {
+    Ok(AppConfig::load(&Paths::app_support()?)?.native_play_enabled)
+}
+
+/// Persists the native-play opt-in.
+#[tauri::command]
+pub fn set_native_play_enabled(enabled: bool) -> AppResult<()> {
+    let paths = Paths::app_support()?;
+    let mut config = AppConfig::load(&paths)?;
+    config.native_play_enabled = enabled;
+    config.save(&paths)
+}
 
 /// Holds the single in-flight native session, if any. Harmony only ever
 /// plays one game natively at a time; starting a new session replaces (and,
@@ -47,6 +65,11 @@ pub fn start_native_play(
     db: State<'_, Db>,
     session: State<'_, NativeSession>,
 ) -> AppResult<()> {
+    if !AppConfig::load(&Paths::app_support()?)?.native_play_enabled {
+        return Err(AppError::Unsupported(
+            "native play is disabled — enable it in Settings first".into(),
+        ));
+    }
     let game = LibraryRepo::new(&db).get_game(game_id)?;
     if game.system != native::NATIVE_SYSTEM {
         return Err(AppError::Unsupported(format!(

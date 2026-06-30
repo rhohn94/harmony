@@ -1,4 +1,4 @@
-// Native play IPC (v0.21 "Bedrock" W214). A native libretro core session
+// Native play IPC (v0.21 "Bedrock" W214/W215). A native libretro core session
 // runs entirely in the Rust backend; the frontend starts/stops it and polls
 // decoded RGBA frames to paint onto a <canvas> (NativePlayer.tsx). Mirrors
 // docs/design/native-emulation-design.md §3/§4.
@@ -11,6 +11,16 @@ export interface NativeFrame {
   height: number;
   /** Base64-encoded RGBA8888 bytes, `width * height * 4` long once decoded. */
   rgbaBase64: string;
+}
+
+/** Whether native hosting is enabled (off by default — W215). */
+export function getNativePlayEnabled(): Promise<boolean> {
+  return invoke<boolean>("get_native_play_enabled");
+}
+
+/** Persists the native-play opt-in. */
+export function setNativePlayEnabled(enabled: boolean): Promise<void> {
+  return invoke<void>("set_native_play_enabled", { enabled });
 }
 
 /** Starts a native session for `gameId`, replacing any session already running. */
