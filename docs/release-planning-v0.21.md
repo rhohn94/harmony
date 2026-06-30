@@ -1,6 +1,6 @@
 # Release Planning — v0.21 "Bedrock"
 
-> status: draft
+> status: agreed
 > Companion to `version-history.md`. Captures the scope, pass structure, and
 > implementation ledger for v0.21. Archive into `version-history.md` when the
 > release ships.
