@@ -343,9 +343,19 @@ and as the automatic fallback if native init fails.
 - **Native audio:** `cpal`/CoreAudio output fed by a ring buffer from the
   core's audio callback — no Web Audio, no cold-start garble.
 - **Frame delivery:** decoded frames pushed to a `<canvas>` via Tauri IPC.
+- **Input:** the same keyboard/gamepad bindings that already drive the
+  EmulatorJS path drive the native one (`src/features/controller/` gamepad
+  state + EmulatorJS-equivalent keyboard defaults), pushed into the core each
+  poll tick.
+- **Settings toggle:** off by default; the runtime switch falls back to
+  EmulatorJS automatically if native init fails for any reason.
 - **Boundary:** NES-only proof this release; broader core coverage, save
   states, a native NSView overlay, and the preview-then-play attract mode are
   explicit follow-ups, not built here.
+- **Real-device verification still pending:** the audio-cleanliness and
+  load-time acceptance criteria need an installed `fceumm` core + a real ROM
+  to verify by ear/clock, neither of which exists in the dev sandbox — see
+  `release-planning-v0.21.md` §5 Follow-ups.
 
 Design: [`native-emulation-design.md`](design/native-emulation-design.md) ·
 Plan: [`release-planning-v0.21.md`](release-planning-v0.21.md).
