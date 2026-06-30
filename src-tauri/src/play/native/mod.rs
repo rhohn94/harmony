@@ -7,6 +7,7 @@
 //! docs/design/native-emulation-design.md.
 
 mod callbacks;
+mod core_path;
 mod ffi;
 mod host;
 mod runtime;
@@ -15,5 +16,6 @@ pub use callbacks::{
     audio_sample_batch, environment, input_poll, input_state, install, set_joypad_state,
     uninstall, AudioBatch, CallbackChannels, EnvironmentEvent, PixelFormat, VideoFrame,
 };
+pub use core_path::{resolve_native_core_path, NATIVE_CORE_ID, NATIVE_SYSTEM};
 pub use host::{CoreSystemInfo, LibretroCore};
 pub use runtime::NativeRuntime;
