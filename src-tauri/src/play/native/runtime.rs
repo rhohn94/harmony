@@ -13,7 +13,8 @@
 //! design doc's "Follow-ups"); the ring buffer simply drops the oldest
 //! samples on overflow rather than nudging playback rate against fill level.
 
-use super::callbacks::{self, AudioBatch, VideoFrame};
+use super::callbacks::{self, AudioBatch, EnvironmentEvent, PixelFormat};
+use super::frame::{to_rgba8, Rgba8Frame};
 use super::host::LibretroCore;
 use crate::error::{AppError, AppResult};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
@@ -95,7 +96,7 @@ impl AudioRing {
 /// A live, running native core session. `Drop` signals both threads to stop
 /// and joins them, so a session never outlives the struct that owns it.
 pub struct NativeRuntime {
-    latest_frame: Arc<Mutex<Option<VideoFrame>>>,
+    latest_frame: Arc<Mutex<Option<Rgba8Frame>>>,
     stop: Arc<AtomicBool>,
     core_thread: Option<JoinHandle<()>>,
     audio_thread: Option<JoinHandle<AppResult<()>>>,
@@ -125,15 +126,18 @@ impl NativeRuntime {
 
         let channels = callbacks::install();
         let latest_frame = Arc::new(Mutex::new(None));
+        // Libretro's implicit default before a core negotiates otherwise.
+        let pixel_format = Arc::new(Mutex::new(PixelFormat::Rgb1555));
         let ring = Arc::new(AudioRing::new());
         let stop = Arc::new(AtomicBool::new(false));
 
         let core_thread = {
             let latest_frame = Arc::clone(&latest_frame);
+            let pixel_format = Arc::clone(&pixel_format);
             let ring = Arc::clone(&ring);
             let stop = Arc::clone(&stop);
             std::thread::spawn(move || {
-                run_core_loop(core, channels, fps, &latest_frame, &ring, &stop);
+                run_core_loop(core, channels, fps, &latest_frame, &pixel_format, &ring, &stop);
                 callbacks::uninstall();
             })
         };
@@ -152,10 +156,11 @@ impl NativeRuntime {
         })
     }
 
-    /// A clone of the most recently produced video frame, if any. Cheap to
-    /// poll — intended to back a Tauri command (W214) that pulls frames on a
-    /// UI-driven cadence rather than being pushed one for one with the core.
-    pub fn latest_frame(&self) -> Option<VideoFrame> {
+    /// A clone of the most recently produced video frame, already decoded to
+    /// RGBA8888. Cheap to poll — backs a Tauri command (W214) that pulls
+    /// frames on a UI-driven cadence rather than being pushed one for one
+    /// with the core.
+    pub fn latest_frame(&self) -> Option<Rgba8Frame> {
         self.latest_frame
             .lock()
             .unwrap_or_else(|p| p.into_inner())
@@ -177,12 +182,13 @@ impl Drop for NativeRuntime {
 
 /// Drives `retro_run` at a fixed cadence (`1/fps` per frame, no
 /// dynamic-rate-control yet) until `stop` is set, draining each frame's
-/// video/audio callback output into the shared buffers.
+/// environment/video/audio callback output into the shared buffers.
 fn run_core_loop(
     mut core: LibretroCore,
     channels: callbacks::CallbackChannels,
     fps: f64,
-    latest_frame: &Mutex<Option<VideoFrame>>,
+    latest_frame: &Mutex<Option<Rgba8Frame>>,
+    pixel_format: &Mutex<PixelFormat>,
     ring: &AudioRing,
     stop: &AtomicBool,
 ) {
@@ -194,7 +200,10 @@ fn run_core_loop(
             // fix — stop rather than spin.
             break;
         }
-        drain_video(&channels, latest_frame);
+        // Before video: a core typically negotiates its pixel format once
+        // near startup, before its first real video_refresh call.
+        drain_environment(&channels, pixel_format, stop);
+        drain_video(&channels, latest_frame, pixel_format);
         drain_audio(&channels, ring);
         let elapsed = tick_start.elapsed();
         if elapsed < frame_duration {
@@ -203,15 +212,37 @@ fn run_core_loop(
     }
 }
 
-/// Latest-frame-wins: drains every queued frame but only keeps the last one,
-/// so a momentarily slow consumer never builds up a backlog of stale frames.
-fn drain_video(channels: &callbacks::CallbackChannels, latest_frame: &Mutex<Option<VideoFrame>>) {
-    let mut newest: Option<VideoFrame> = None;
+fn drain_environment(
+    channels: &callbacks::CallbackChannels,
+    pixel_format: &Mutex<PixelFormat>,
+    stop: &AtomicBool,
+) {
+    while let Ok(event) = channels.environment.try_recv() {
+        match event {
+            EnvironmentEvent::PixelFormat(format) => {
+                *pixel_format.lock().unwrap_or_else(|p| p.into_inner()) = format;
+            }
+            EnvironmentEvent::Shutdown => stop.store(true, Ordering::Relaxed),
+        }
+    }
+}
+
+/// Latest-frame-wins: drains every queued frame but only converts and keeps
+/// the last one, so a momentarily slow consumer never builds up a backlog of
+/// stale frames (or pays the conversion cost for frames nobody will see).
+fn drain_video(
+    channels: &callbacks::CallbackChannels,
+    latest_frame: &Mutex<Option<Rgba8Frame>>,
+    pixel_format: &Mutex<PixelFormat>,
+) {
+    let mut newest = None;
     while let Ok(frame) = channels.video.try_recv() {
         newest = Some(frame);
     }
     if let Some(frame) = newest {
-        *latest_frame.lock().unwrap_or_else(|p| p.into_inner()) = Some(frame);
+        let format = *pixel_format.lock().unwrap_or_else(|p| p.into_inner());
+        let rgba = to_rgba8(&frame, format);
+        *latest_frame.lock().unwrap_or_else(|p| p.into_inner()) = Some(rgba);
     }
 }
 

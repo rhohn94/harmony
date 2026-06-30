@@ -9,6 +9,7 @@
 mod callbacks;
 mod core_path;
 mod ffi;
+mod frame;
 mod host;
 mod runtime;
 
@@ -17,5 +18,6 @@ pub use callbacks::{
     uninstall, AudioBatch, CallbackChannels, EnvironmentEvent, PixelFormat, VideoFrame,
 };
 pub use core_path::{resolve_native_core_path, NATIVE_CORE_ID, NATIVE_SYSTEM};
+pub use frame::Rgba8Frame;
 pub use host::{CoreSystemInfo, LibretroCore};
 pub use runtime::NativeRuntime;
