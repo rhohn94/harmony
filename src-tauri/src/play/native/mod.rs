@@ -6,7 +6,12 @@
 //! automatic fallback if native hosting fails. Design:
 //! docs/design/native-emulation-design.md.
 
+mod callbacks;
 mod ffi;
 mod host;
 
+pub use callbacks::{
+    audio_sample_batch, environment, input_poll, input_state, install, set_joypad_state,
+    uninstall, AudioBatch, CallbackChannels, EnvironmentEvent, PixelFormat, VideoFrame,
+};
 pub use host::{CoreSystemInfo, LibretroCore};
