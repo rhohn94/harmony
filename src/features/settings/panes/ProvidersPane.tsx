@@ -1,7 +1,7 @@
 // ProvidersPane — the Settings "Providers" section (search provider management).
 
 import { useCallback, useEffect, useState } from "react";
-import { AuraButton } from "@aura/react";
+import { AuraButton, AuraField } from "@aura/react";
 
 import {
   addProvider,
@@ -12,7 +12,6 @@ import {
 } from "../../../ipc/search";
 
 const inputStyle: React.CSSProperties = {
-  flex: 1,
   padding: "8px 12px",
   borderRadius: 8,
   border: "1px solid var(--aura-border)",
@@ -92,23 +91,27 @@ export function ProvidersPane() {
       >
         <p style={{ margin: 0, fontWeight: 500, fontSize: 13 }}>Add provider</p>
         <div style={{ display: "flex", gap: 8 }}>
-          <input
-            type="text"
-            placeholder="Name"
-            tabIndex={0}
-            value={addName}
-            onChange={(e) => setAddName(e.currentTarget.value)}
-            style={inputStyle}
-          />
-          <input
-            type="text"
-            placeholder="https://example.com/search?q={query}"
-            tabIndex={0}
-            value={addTemplate}
-            onChange={(e) => setAddTemplate(e.currentTarget.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") void handleAdd(); }}
-            style={{ ...inputStyle, flex: 2 }}
-          />
+          <AuraField tabIndex={0} style={{ flex: 1 }}>
+            <input
+              type="text"
+              placeholder="Name"
+              tabIndex={0}
+              value={addName}
+              onChange={(e) => setAddName(e.currentTarget.value)}
+              style={inputStyle}
+            />
+          </AuraField>
+          <AuraField tabIndex={0} style={{ flex: 2 }}>
+            <input
+              type="text"
+              placeholder="https://example.com/search?q={query}"
+              tabIndex={0}
+              value={addTemplate}
+              onChange={(e) => setAddTemplate(e.currentTarget.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") void handleAdd(); }}
+              style={inputStyle}
+            />
+          </AuraField>
           <AuraButton tabIndex={0} onClick={() => { void handleAdd(); }}>
             Add
           </AuraButton>

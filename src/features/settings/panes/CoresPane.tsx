@@ -1,6 +1,7 @@
 // CoresPane — the Settings "Cores" section (per-system active core selection).
 
 import { useCallback, useEffect, useState } from "react";
+import { AuraField } from "@aura/react";
 
 import { listInstalledCores, setActiveCore, type Core } from "../../../ipc/cores";
 
@@ -82,23 +83,25 @@ export function CoresPane() {
             >
               {system}
             </span>
-            <select
-              className="harmony-input"
-              style={{ maxWidth: 280 }}
-              tabIndex={0}
-              value={activeCore?.coreId ?? ""}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val) void handleSetActive(system, val);
-              }}
-            >
-              {systemCores.map((c) => (
-                <option key={c.coreId} value={c.coreId}>
-                  {c.coreId}
-                  {c.version ? ` (${c.version})` : ""}
-                </option>
-              ))}
-            </select>
+            <AuraField tabIndex={0}>
+              <select
+                className="harmony-input"
+                style={{ maxWidth: 280 }}
+                tabIndex={0}
+                value={activeCore?.coreId ?? ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val) void handleSetActive(system, val);
+                }}
+              >
+                {systemCores.map((c) => (
+                  <option key={c.coreId} value={c.coreId}>
+                    {c.coreId}
+                    {c.version ? ` (${c.version})` : ""}
+                  </option>
+                ))}
+              </select>
+            </AuraField>
           </div>
         );
       })}

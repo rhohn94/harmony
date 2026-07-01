@@ -1,7 +1,7 @@
 // FoldersPane — the Settings "Folders" section (content folder management).
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AuraButton } from "@aura/react";
+import { AuraButton, AuraField } from "@aura/react";
 
 import {
   addContentFolder,
@@ -81,24 +81,25 @@ export function FoldersPane() {
       )}
 
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        <input
-          ref={addInputRef}
-          type="text"
-          placeholder="/path/to/roms"
-          tabIndex={0}
-          style={{
-            flex: 1,
-            padding: "8px 12px",
-            borderRadius: 8,
-            border: "1px solid var(--aura-border)",
-            background: "var(--aura-surface-2)",
-            color: "var(--aura-on-surface)",
-            fontSize: 14,
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") void handleAdd();
-          }}
-        />
+        <AuraField tabIndex={0} style={{ flex: 1 }}>
+          <input
+            ref={addInputRef}
+            type="text"
+            placeholder="/path/to/roms"
+            tabIndex={0}
+            style={{
+              padding: "8px 12px",
+              borderRadius: 8,
+              border: "1px solid var(--aura-border)",
+              background: "var(--aura-surface-2)",
+              color: "var(--aura-on-surface)",
+              fontSize: 14,
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void handleAdd();
+            }}
+          />
+        </AuraField>
         <AuraButton tabIndex={0} onClick={() => { void handleAdd(); }}>
           Add Folder
         </AuraButton>
