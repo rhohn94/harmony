@@ -214,7 +214,7 @@ since).
 |---|---|---|---|---|
 | `feat/w220-fix-search-thread-panic` (W220) | n/a | ☑ | ☑ | ☑ |
 | `feat/w221-fix-focus-ring-lingering` (W221) | n/a | ☑ | ☑ | ☑ |
-| `feat/w222-cancellable-effect-hook` (W222) | n/a | ☐ | ☐ | ☐ |
+| `feat/w222-cancellable-effect-hook` (W222) | n/a | ☑ | ☑ | ☑ |
 | `feat/w223-split-search-page` (W223) | n/a | ☐ | ☐ | ☐ |
 | `feat/w224-split-settings-panes` (W224) | n/a | ☐ | ☐ | ☐ |
 | `feat/w225-ipc-boundary-cleanup` (W225) | n/a | ☐ | ☐ | ☐ |
@@ -224,4 +224,12 @@ since).
 
 ### Follow-ups discovered during implementation
 
-(Empty at start; populated as branches land.)
+- **W222 scope note.** 11 of the 15 grep-matched `cancelled`-flag call sites
+  were migrated to `useCancellableEffect`. Two were deliberately left as-is
+  because the pattern doesn't fit without changing behavior:
+  `LibraryPage.tsx`'s `loadGames` is a re-invokable `useCallback` called both
+  from a mount effect and imperatively from import handlers (the returned
+  cleanup can't cleanly become the hook's cleanup); `NativePlayer.tsx`'s
+  effect ties the flag to a continuous `requestAnimationFrame` polling loop
+  plus keyboard/gamepad listeners, not a one-shot fetch. Forcing either into
+  the generic hook would obscure more than it simplifies.
