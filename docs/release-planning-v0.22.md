@@ -216,7 +216,7 @@ since).
 | `feat/w221-fix-focus-ring-lingering` (W221) | n/a | ☑ | ☑ | ☑ |
 | `feat/w222-cancellable-effect-hook` (W222) | n/a | ☑ | ☑ | ☑ |
 | `feat/w223-split-search-page` (W223) | n/a | ☑ | ☑ | ☑ |
-| `feat/w224-split-settings-panes` (W224) | n/a | ☐ | ☐ | ☐ |
+| `feat/w224-split-settings-panes` (W224) | n/a | ☑ | ☑ | ☑ |
 | `feat/w225-ipc-boundary-cleanup` (W225) | n/a | ☐ | ☐ | ☐ |
 | `feat/w226-unified-empty-error-states` (W226) | n/a | ☐ | ☐ | ☐ |
 | `feat/w227-ux-consistency-pass` (W227) | n/a | ☐ | ☐ | ☐ |
