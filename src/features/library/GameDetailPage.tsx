@@ -12,10 +12,11 @@ import { AuraButton, AuraCard } from "@aura/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { motion } from "framer-motion";
 import { SPRING } from "../../lib/motion";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { enrichGameMetadata, fetchBoxart, getGame, launchGame } from "../../ipc/commands";
 import type { Game } from "../../ipc/commands";
+import { useCancellableEffect } from "../../hooks/useCancellableEffect";
 import { artUrl } from "./art";
 import { HeroBackdrop } from "./HeroBackdrop";
 import { useBoxart } from "./useBoxart";
@@ -50,26 +51,25 @@ export function GameDetailPage() {
 
   const gameId = Number(id);
 
-  useEffect(() => {
-    let cancelled = false;
-    if (!Number.isFinite(gameId)) {
-      setError("Invalid game id");
-      return;
-    }
-    getGame(gameId)
-      .then((g) => {
-        if (!cancelled) {
-          setGame(g);
-          setError(null);
-        }
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : String(err));
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [gameId]);
+  useCancellableEffect(
+    (isCancelled) => {
+      if (!Number.isFinite(gameId)) {
+        setError("Invalid game id");
+        return;
+      }
+      getGame(gameId)
+        .then((g) => {
+          if (!isCancelled()) {
+            setGame(g);
+            setError(null);
+          }
+        })
+        .catch((err: unknown) => {
+          if (!isCancelled()) setError(err instanceof Error ? err.message : String(err));
+        });
+    },
+    [gameId],
+  );
 
   const resolvedArt = useBoxart(game, true);
   const art = artOverride ?? resolvedArt;

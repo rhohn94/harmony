@@ -8,10 +8,11 @@
 
 import { AuraCard, AuraField } from "@aura/react";
 import { motion } from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getConsole, listConsoles } from "../../ipc/commands";
 import type { ConsoleInfo } from "../../ipc/commands";
+import { useCancellableEffect } from "../../hooks/useCancellableEffect";
 import { listContainer, listItem } from "../../lib/motion";
 import { artUrl } from "../library/art";
 
@@ -63,12 +64,11 @@ export function ConsolesPage() {
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
-  useEffect(() => {
-    let cancelled = false;
+  useCancellableEffect((isCancelled) => {
     setLoading(true);
     listConsoles()
       .then((rows) => {
-        if (cancelled) return;
+        if (isCancelled()) return;
         setConsoles(rows);
         setError(null);
         // Lazily fetch + cache media for any console without a photo yet.
@@ -76,21 +76,18 @@ export function ConsolesPage() {
           if (c.imagePath) continue;
           void getConsole(c.key)
             .then((full) => {
-              if (cancelled) return;
+              if (isCancelled()) return;
               setConsoles((prev) => prev.map((x) => (x.key === full.key ? full : x)));
             })
             .catch(() => undefined);
         }
       })
       .catch((err: unknown) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : String(err));
+        if (!isCancelled()) setError(err instanceof Error ? err.message : String(err));
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!isCancelled()) setLoading(false);
       });
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
   const visible = useMemo(() => {
