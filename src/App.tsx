@@ -17,6 +17,7 @@ import { HARMONY_ROUTES, type HarmonyRoute } from "./routes";
 import { pageTransition } from "./lib/motion";
 import { ControllerProvider, HintBar, useController, useFocusable } from "./features/controller";
 import { useFullscreen, type UseFullscreenResult } from "./features/shell/useFullscreen";
+import { useCancellableEffect } from "./hooks/useCancellableEffect";
 
 // Shell geometry (sidebar width, drag-strip height, the native traffic-light
 // inset — D2 §5) lives as `--harmony-*` tokens in theme/aura-theme.css so the
@@ -26,20 +27,16 @@ import { useFullscreen, type UseFullscreenResult } from "./features/shell/useFul
 function IpcStatus() {
   const [pong, setPong] = useState<string>("…");
 
-  useEffect(() => {
-    let cancelled = false;
+  useCancellableEffect((isCancelled) => {
     ping()
       .then((reply) => {
-        if (!cancelled) setPong(reply);
+        if (!isCancelled()) setPong(reply);
       })
       .catch((err: unknown) => {
-        if (cancelled) return;
+        if (isCancelled()) return;
         const detail = isAppError(err) ? err.detail : String(err);
         setPong(`ping failed: ${detail}`);
       });
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
   return (
