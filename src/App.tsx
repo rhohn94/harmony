@@ -171,11 +171,20 @@ function Sidebar({ fullscreen }: { fullscreen: UseFullscreenResult }) {
  * the controller's B button always backs out. Registered once at shell mount.
  */
 function ShellControllerBindings() {
-  const { setActionHandlers } = useController();
+  const { setActionHandlers, setFocus } = useController();
   const navigate = useNavigate();
+  const location = useLocation();
   useEffect(() => {
     setActionHandlers({ back: () => navigate(-1) });
   }, [setActionHandlers, navigate]);
+  // A route change leaves the outgoing screen's focus id behind — the next
+  // screen's own elements re-claim focus as they register (ControllerProvider's
+  // register()), but nothing cleared the stale id in between, so a mid-crossfade
+  // frame (or a screen with no focusables) could keep showing a foreign ring
+  // (W221, controller-input-design.md).
+  useEffect(() => {
+    setFocus(null);
+  }, [location.pathname, setFocus]);
   return null;
 }
 
