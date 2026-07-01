@@ -218,9 +218,13 @@ since).
 | `feat/w223-split-search-page` (W223) | n/a | ☑ | ☑ | ☑ |
 | `feat/w224-split-settings-panes` (W224) | n/a | ☑ | ☑ | ☑ |
 | `feat/w225-ipc-boundary-cleanup` (W225) | n/a | ☑ | ☑ | ☑ |
-| `feat/w226-unified-empty-error-states` (W226) | n/a | ☐ | ☐ | ☐ |
+| `feat/w226-unified-empty-error-states` (W226)* | n/a | ☑ | ☑ | ☑ |
 | `feat/w227-ux-consistency-pass` (W227) | n/a | ☐ | ☐ | ☐ |
 | `feat/w228-tests-docs-release` (W228) | n/a | ☐ | ☐ | ☐ |
+
+\* W226 was implemented and gate-verified as a direct commit on `version/0.22`
+(614a739) rather than on its own `feat/w226-*` branch — a process slip, not a
+scope or quality issue. See Follow-ups below.
 
 ### Follow-ups discovered during implementation
 
@@ -247,3 +251,11 @@ since).
   Neither fix changes the acceptance criteria for W225; both were the natural
   consequence of using the already-correct existing wrapper instead of the
   mistyped raw call.
+
+- **W226 process note.** Implemented directly on `version/0.22` instead of a
+  `feat/w226-unified-empty-error-states` branch — the branch-creation step was
+  skipped by mistake before starting the edits. The work itself went through
+  the same gate sequence (typecheck/lint/test/`recipe.py smoke`) as every other
+  item before being committed (614a739). No functional impact; flagged here so
+  the ledger's `*` annotation has a paper trail, and as a reminder to create the
+  branch *before* editing on W227/W228.
