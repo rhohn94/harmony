@@ -213,7 +213,7 @@ since).
 | Branch | Design doc | Implemented | Reviewed | Merged into version/0.22 |
 |---|---|---|---|---|
 | `feat/w220-fix-search-thread-panic` (W220) | n/a | ☑ | ☑ | ☑ |
-| `feat/w221-fix-focus-ring-lingering` (W221) | n/a | ☐ | ☐ | ☐ |
+| `feat/w221-fix-focus-ring-lingering` (W221) | n/a | ☑ | ☑ | ☑ |
 | `feat/w222-cancellable-effect-hook` (W222) | n/a | ☐ | ☐ | ☐ |
 | `feat/w223-split-search-page` (W223) | n/a | ☐ | ☐ | ☐ |
 | `feat/w224-split-settings-panes` (W224) | n/a | ☐ | ☐ | ☐ |
