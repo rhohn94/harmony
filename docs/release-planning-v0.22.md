@@ -1,6 +1,6 @@
 # Release Planning — v0.22 "Polish"
 
-> status: draft
+> status: agreed
 > Companion to `version-history.md`. Captures the scope, pass structure, and
 > implementation ledger for v0.22. Archive into `version-history.md` when the
 > release ships (note: this project's established convention is that
