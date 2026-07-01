@@ -217,7 +217,7 @@ since).
 | `feat/w222-cancellable-effect-hook` (W222) | n/a | ☑ | ☑ | ☑ |
 | `feat/w223-split-search-page` (W223) | n/a | ☑ | ☑ | ☑ |
 | `feat/w224-split-settings-panes` (W224) | n/a | ☑ | ☑ | ☑ |
-| `feat/w225-ipc-boundary-cleanup` (W225) | n/a | ☐ | ☐ | ☐ |
+| `feat/w225-ipc-boundary-cleanup` (W225) | n/a | ☑ | ☑ | ☑ |
 | `feat/w226-unified-empty-error-states` (W226) | n/a | ☐ | ☐ | ☐ |
 | `feat/w227-ux-consistency-pass` (W227) | n/a | ☐ | ☐ | ☐ |
 | `feat/w228-tests-docs-release` (W228) | n/a | ☐ | ☐ | ☐ |
@@ -233,3 +233,17 @@ since).
   effect ties the flag to a continuous `requestAnimationFrame` polling loop
   plus keyboard/gamepad listeners, not a one-shot fetch. Forcing either into
   the generic hook would obscure more than it simplifies.
+
+- **W225 incidental bug fixes.** Routing `RetroArchPane.tsx` through the
+  existing (correctly-typed) `ipc/launch.ts` wrappers instead of its raw
+  `invoke()` calls fixed two pre-existing latent bugs found along the way:
+  (1) the pane's mount effect called `invoke("get_retroarch_path")`, a command
+  that was never wired up on the Rust side (only `locate_retroarch` exists),
+  so the path field silently never populated — now uses `locateRetroArch()`.
+  (2) `handleSave` passed `path.trim() || null` to `set_retroarch_path`, but
+  the Rust command takes a plain `String` (rejecting empty with a validation
+  error) and never accepted `null` — now passes `path.trim()` through
+  `setRetroArchPath(path: string)`, matching the backend's actual contract.
+  Neither fix changes the acceptance criteria for W225; both were the natural
+  consequence of using the already-correct existing wrapper instead of the
+  mistyped raw call.
