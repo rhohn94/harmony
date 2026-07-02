@@ -108,23 +108,37 @@ impl NativeRuntime {
     /// callers can read [`Self::latest_frame`] as soon as the core produces
     /// its first frame.
     pub fn start(core_path: &Path, rom_path: &Path) -> AppResult<Self> {
-        let mut core = LibretroCore::load(core_path)?;
-        core.set_environment(callbacks::environment);
-        core.set_video_refresh(callbacks::video_refresh);
-        core.set_audio_sample_batch(callbacks::audio_sample_batch);
-        core.set_input_poll(callbacks::input_poll);
-        core.set_input_state(callbacks::input_state);
-        core.load_game(rom_path)?;
-        let fps = {
+        // Channels first: cores negotiate (e.g. SET_PIXEL_FORMAT) during
+        // retro_init/retro_load_game, and events sent before install() would
+        // be silently dropped.
+        let channels = callbacks::install();
+        let bring_up = || -> AppResult<(LibretroCore, f64)> {
+            let mut core = LibretroCore::load(core_path)?;
+            // Contract order (see LibretroCore's doc): environment MUST be
+            // registered before retro_init — real cores query it during init.
+            core.set_environment(callbacks::environment);
+            core.init()?;
+            core.set_video_refresh(callbacks::video_refresh);
+            core.set_audio_sample_batch(callbacks::audio_sample_batch);
+            core.set_input_poll(callbacks::input_poll);
+            core.set_input_state(callbacks::input_state);
+            core.load_game(rom_path)?;
             let av = core.av_info();
-            if av.timing.fps > 0.0 {
+            let fps = if av.timing.fps > 0.0 {
                 av.timing.fps
             } else {
                 FALLBACK_FPS
+            };
+            Ok((core, fps))
+        };
+        let (core, fps) = match bring_up() {
+            Ok(v) => v,
+            Err(e) => {
+                callbacks::uninstall(); // don't leave dead sinks installed
+                return Err(e);
             }
         };
 
-        let channels = callbacks::install();
         let latest_frame = Arc::new(Mutex::new(None));
         // Libretro's implicit default before a core negotiates otherwise.
         let pixel_format = Arc::new(Mutex::new(PixelFormat::Rgb1555));

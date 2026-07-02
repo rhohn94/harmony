@@ -182,6 +182,30 @@ architecture — it keeps serving every other system.
 - Controller/keyboard input drives the native-hosted game the same way it
   already drives the EmulatorJS one (reuses `src/features/controller/`).
 
+### Verification record (v0.23, W233 — the stop-and-reassess point)
+
+The v0.21 real-device criteria were finally exercisable in v0.23 (an installed
+`fceumm_libretro.dylib` + real ROMs were available on the dev machine):
+
+- **Root cause of the v0.21 crash found and fixed.** Native play SIGSEGV'd
+  inside fceumm's `retro_init`: `LibretroCore::load()` called `retro_init`
+  before the environment callback was registered, violating the libretro
+  contract (`retro_set_environment` must precede `retro_init`; real cores
+  query the environment during init). The stub-core test missed it because
+  its `retro_init` was empty. Fixed by splitting `init()` out of `load()`,
+  enforcing the order in safe Rust (`init` errors before `set_environment`;
+  `load_game` errors before `init`), installing the callback channels before
+  bring-up so negotiation events aren't dropped, and making the stub core
+  query the environment during init like a real core. Regression tests:
+  `init_before_set_environment_is_rejected`, `load_game_before_init_is_rejected`.
+- **Real-device run (2026-07-01, MacBook Pro Speakers, SMB World ROM):**
+  boots, negotiates, runs at 60.0988 fps, produces 256×240 RGBA frames,
+  audio stream plays (48 kHz F32), clean exit. Harness:
+  `manual_play_produces_audible_output` (`--ignored`, env-var driven).
+- **By-ear audio-cleanliness + load-time comparison:** pending maintainer
+  confirmation; the flag default stays **off** until confirmed, then flipping
+  is a one-line default change (tracked in the v0.23 ledger).
+
 ## Open questions
 
 - **Combined-work license question** (already open, not created by this
