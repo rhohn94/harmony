@@ -201,8 +201,8 @@ returned zero).
 
 | Branch | Design doc | Implemented | Reviewed | Merged into version/0.23 |
 |---|---|---|---|---|
-| `feat/w230-native-saves` (W230) | ☐ | ☐ | ☐ | ☐ |
-| `feat/w231-ejs-save-bridge` (W231) | ☐ | ☐ | ☐ | ☐ |
+| `feat/w230-native-saves` (W230) | ☑ | ☑ | ☑ | ☑ |
+| `feat/w231-ejs-save-bridge` (W231) | ☑ | ☑ | ☑ | ☑ |
 
 ### Phase 3
 
