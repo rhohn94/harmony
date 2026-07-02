@@ -42,22 +42,32 @@ fn read_c_str(ptr: *const c_char) -> String {
     unsafe { CStr::from_ptr(ptr) }.to_string_lossy().into_owned()
 }
 
-/// A loaded, initialized libretro core. `_library` is never read after
-/// construction — it exists solely to keep the `.dylib` mapped for as long as
-/// `symbols`' raw function pointers may be called; dropping it early would
-/// leave those pointers dangling.
+/// A loaded libretro core. `_library` is never read after construction — it
+/// exists solely to keep the `.dylib` mapped for as long as `symbols`' raw
+/// function pointers may be called; dropping it early would leave those
+/// pointers dangling.
+///
+/// Lifecycle order is enforced here, matching the libretro contract (and
+/// RetroArch's call order): `load` → [`Self::set_environment`] →
+/// [`Self::init`] → other `set_*` callbacks → [`Self::load_game`] →
+/// [`Self::run_frame`]*. `retro_set_environment` **must** precede
+/// `retro_init` — real cores (fceumm included) invoke the environment
+/// callback from inside `retro_init`, and a core calling a never-registered
+/// callback is exactly the v0.21 SIGSEGV this ordering fixes.
 #[derive(Debug)]
 pub struct LibretroCore {
     symbols: RawSymbols,
+    environment_set: bool,
     initialized: bool,
     loaded_game: bool,
     _library: Library,
 }
 
 impl LibretroCore {
-    /// Loads a libretro core `.dylib` from `path`, verifies it reports the
-    /// expected `RETRO_API_VERSION`, and calls `retro_init`. Does not load a
-    /// game yet — see [`Self::load_game`].
+    /// Loads a libretro core `.dylib` from `path` and verifies it reports the
+    /// expected `RETRO_API_VERSION`. Does **not** call `retro_init` — call
+    /// [`Self::set_environment`] then [`Self::init`] (in that order), because
+    /// cores may query the environment during init.
     pub fn load(path: &Path) -> AppResult<Self> {
         let library = unsafe {
             Library::new(path).map_err(|e| {
@@ -89,16 +99,34 @@ impl LibretroCore {
             )));
         }
 
-        unsafe {
-            (symbols.retro_init)();
-        }
-
         Ok(LibretroCore {
             symbols,
-            initialized: true,
+            environment_set: false,
+            initialized: false,
             loaded_game: false,
             _library: library,
         })
+    }
+
+    /// Calls `retro_init`. Rejected unless [`Self::set_environment`] has been
+    /// called first — the libretro contract requires the environment callback
+    /// to be registered before init, and real cores segfault otherwise.
+    /// Idempotent: a second call is a no-op.
+    pub fn init(&mut self) -> AppResult<()> {
+        if !self.environment_set {
+            return Err(AppError::Internal(
+                "retro_init called before retro_set_environment (libretro contract violation)"
+                    .into(),
+            ));
+        }
+        if self.initialized {
+            return Ok(());
+        }
+        unsafe {
+            (self.symbols.retro_init)();
+        }
+        self.initialized = true;
+        Ok(())
     }
 
     /// Reads the core's self-reported name/version/supported extensions.
@@ -125,10 +153,11 @@ impl LibretroCore {
         info
     }
 
-    pub fn set_environment(&self, cb: RetroEnvironmentFn) {
+    pub fn set_environment(&mut self, cb: RetroEnvironmentFn) {
         unsafe {
             (self.symbols.retro_set_environment)(cb);
         }
+        self.environment_set = true;
     }
 
     pub fn set_video_refresh(&self, cb: RetroVideoRefreshFn) {
@@ -159,6 +188,11 @@ impl LibretroCore {
     /// bytes) — every bundled/installable core handles `need_fullpath`, matching
     /// the existing external-RetroArch launch path (`core/launch`).
     pub fn load_game(&mut self, rom_path: &Path) -> AppResult<()> {
+        if !self.initialized {
+            return Err(AppError::Internal(
+                "retro_load_game called before retro_init".into(),
+            ));
+        }
         let c_path = CString::new(rom_path.to_string_lossy().as_bytes())
             .map_err(|e| AppError::Validation(format!("ROM path has an embedded NUL: {e}")))?;
         let info = RetroGameInfo {
@@ -248,8 +282,16 @@ typedef void (*retro_input_poll_t)(void);
 typedef short (*retro_input_state_t)(unsigned port, unsigned device, unsigned index, unsigned id);
 
 static int frame_count = 0;
+static retro_environment_t env_cb = 0;
 
-void retro_init(void) {}
+/* Like real cores (fceumm included), query the environment during init —
+ * a frontend that registers the environment callback too late (or not at
+ * all) crashes here, exactly as the real core does. Guarded so the crash
+ * is a loud, deliberate abort rather than an undefined-behavior segfault. */
+void retro_init(void) {
+    bool can_dupe = false;
+    env_cb(3 /* RETRO_ENVIRONMENT_GET_CAN_DUPE */, &can_dupe);
+}
 void retro_deinit(void) {}
 unsigned retro_api_version(void) { return 1; }
 
@@ -271,7 +313,7 @@ void retro_get_system_av_info(struct retro_system_av_info *info) {
     info->timing.sample_rate = 44100.0;
 }
 
-void retro_set_environment(retro_environment_t cb) {}
+void retro_set_environment(retro_environment_t cb) { env_cb = cb; }
 void retro_set_video_refresh(retro_video_refresh_t cb) {}
 void retro_set_audio_sample_batch(retro_audio_sample_batch_t cb) {}
 void retro_set_input_poll(retro_input_poll_t cb) {}
@@ -303,6 +345,12 @@ void retro_run(void) { frame_count++; }
         status.success().then_some(dylib_path)
     }
 
+    /// Minimal environment callback for lifecycle tests — answers nothing,
+    /// but is a valid registered target for the stub core's init-time query.
+    unsafe extern "C" fn test_environment(_cmd: u32, _data: *mut std::os::raw::c_void) -> bool {
+        false
+    }
+
     #[test]
     fn loads_a_stub_core_and_runs_the_lifecycle() {
         let dir = tempfile::tempdir().expect("tempdir");
@@ -312,6 +360,8 @@ void retro_run(void) { frame_count++; }
         };
 
         let mut core = LibretroCore::load(&dylib).expect("load stub core");
+        core.set_environment(test_environment);
+        core.init().expect("init after set_environment");
         let info = core.system_info();
         assert_eq!(info.library_name, "Stub Core");
         assert_eq!(info.library_version, "1.0");
@@ -342,6 +392,36 @@ void retro_run(void) { frame_count++; }
         };
         let mut core = LibretroCore::load(&dylib).expect("load stub core");
         let err = core.run_frame().expect_err("run before load_game must error");
+        assert!(matches!(err, AppError::Internal(_)));
+    }
+
+    /// The v0.21 SIGSEGV regression test: init without a registered
+    /// environment callback must be rejected in safe Rust, never reach the
+    /// core (where a real core would crash the process).
+    #[test]
+    fn init_before_set_environment_is_rejected() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let Some(dylib) = build_stub_core(dir.path()) else {
+            eprintln!("skipping: no C toolchain on PATH");
+            return;
+        };
+        let mut core = LibretroCore::load(&dylib).expect("load stub core");
+        let err = core.init().expect_err("init before set_environment must error");
+        assert!(matches!(err, AppError::Internal(_)));
+    }
+
+    #[test]
+    fn load_game_before_init_is_rejected() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let Some(dylib) = build_stub_core(dir.path()) else {
+            eprintln!("skipping: no C toolchain on PATH");
+            return;
+        };
+        let mut core = LibretroCore::load(&dylib).expect("load stub core");
+        core.set_environment(test_environment);
+        let err = core
+            .load_game(Path::new("/tmp/never-read.nes"))
+            .expect_err("load_game before init must error");
         assert!(matches!(err, AppError::Internal(_)));
     }
 
